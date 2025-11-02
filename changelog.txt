@@ -1,0 +1,5 @@
+v1.1.0 - VATSIM live METAR added
+v1.2.0 - Clock with UTC, departure local, and destination local times
+v1.3.0 - "Decode" option for METAR. Turns raw text into a readable paragraph
+v1.3.1 - BUG FIX: Invalid ID causes clock to throw error and stop updating
+       - Semantic naming fix for decode label
