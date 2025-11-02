@@ -1,0 +1,170 @@
+body, html {
+	text-align: center;
+	color: hsl(0, 0%, 95%);
+	background: hsl(0, 0%, 15%);
+}
+
+h1 {
+	width: fit-content;
+	text-align: left;
+	font-family: "Noto Serif", "Droid Serif", serif;
+	margin: 10px 0;
+	text-shadow: 0 0 3px hsl(0, 0%, 0%);
+}
+
+section {
+	width: 50%;
+	min-width: 620px;
+	margin: 0 auto;
+	padding: 10px;
+	border-radius: 10px;
+	background: hsl(0, 0%, 20%);
+	box-shadow: 0 0 10px hsl(0, 0%, 10%);
+}
+
+input {
+	margin: 5px;
+	padding: 3px;
+	color: hsl(0, 0%, 95%);
+	font-size: 15px;
+	font-family: monospace;
+	text-align: center;
+	text-shadow: 0 0 3px hsl(0, 0%, 0%);
+	border-radius: 3px;
+	box-shadow: inset 0 0 5px hsl(0, 0%, 10%);
+	background: hsl(0, 0%, 22.5%);
+	border: 1px solid hsl(0, 0%, 15%);
+}
+
+input:focus {
+	outline: none;
+}
+
+button {
+	color: hsl(0, 0%, 95%);
+	font-size: 15px;
+	font-family: "Noto Serif", "Droid Serif", serif;
+	font-weight: bold;
+	text-shadow: 0 0 3px hsl(0, 0%, 5%);
+	margin: 5px 0;
+	background: hsl(0, 0%, 25%);
+	border: none;
+	border-radius: 3px;
+	box-shadow: 0 0 10px hsl(0, 0%, 10%);
+	transition: background 0.5s;
+}
+
+button:hover {
+	background: hsl(0, 0%, 35%);
+	cursor: pointer;
+}
+
+button:active {
+	box-shadow: none;
+}
+
+pre {
+	text-align: left;
+	color: hsl(0, 0%, 95%);
+	text-shadow: 0 0 3px hsl(0, 0%, 10%);
+	background: #0000;
+	overflow: auto;
+	padding: 10px;
+}
+
+#flight-info, #metars {
+	font-size: 15px;
+	line-height: 20px;
+	white-space: pre-wrap;
+}
+
+#clock {
+	color: hsl(0, 0%, 95%);
+	font-family: monospace;
+	font-size: 0;
+	text-shadow: 0 0 3px hsl(0, 0%, 10%);
+	padding: 10px;
+}
+
+.clock {
+	display: inline-block;
+	width: calc(33% - 14px);
+	vertical-align: middle;
+	padding: 2px;
+	margin: 5px;
+	font-size: 15px;
+	line-height: 20px;
+	white-space: pre-wrap;
+	text-shadow: 0 0 3px hsl(0, 0%, 0%);
+	background: hsl(0, 0%, 25%);
+	box-shadow: 0 0 10px hsl(0, 0%, 10%);
+	border-radius: 5px;
+}
+
+#ofp-header {
+	cursor: pointer;
+}
+
+#ofp {
+	height: 500px;
+	overflow: scroll;
+	background: hsl(0, 0%, 20%);
+}
+
+.ofp {
+	width: fit-content;
+	margin: 0 auto;
+	text-align: left;
+}
+
+.slide-checkbox {
+	display: none;
+}
+
+.slide-label {
+	height: 20px;
+	aspect-ratio: 2;
+	display: inline-block;
+	margin-left: 5px;
+	cursor: pointer;
+	background: #c00;
+	border-radius: 20px;
+	box-shadow: 0 0 5px hsl(0, 0%, 10%);
+	transition: background 0.5s;
+}
+
+.slide-label::before {
+	content: "";
+	display: block;
+	height: 20px;
+	aspect-ratio: 1;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 0 5px hsl(0, 0%, 10%);
+	transition: transform 0.5s;
+}
+
+#decode-checkbox:checked + .slide-label {
+	background: #0a0;
+}
+
+#decode-checkbox:checked + .slide-label::before {
+	transform: translateX(20px);
+}
+
+#decode {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	color: hsl(0, 0%, 95%);
+	font-family: sans-serif;
+	font-size: 15px;
+	text-shadow: 0 0 3px hsl(0, 0%, 5%);
+}
+
+#map {
+	display: inline-block;
+	width: 100%;
+	aspect-ratio: 1.5;
+	border-radius: 10px;
+}
