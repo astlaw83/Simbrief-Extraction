@@ -1,0 +1,100 @@
+body, html {
+	text-align: center;
+	color: hsl(0, 0%, 95%);
+	background: hsl(0, 0%, 15%);
+}
+
+h1 {
+	text-align: left;
+	font-family: "Noto Serif", "Droid Serif", serif;
+	margin: 10px 0;
+	text-shadow: 0 0 3px hsl(0, 0%, 0%);
+}
+
+section {
+	width: 50%;
+	min-width: 620px;
+	margin: 0 auto;
+	padding: 10px;
+	border-radius: 10px;
+	background: hsl(0, 0%, 20%);
+	box-shadow: 0 0 10px hsl(0, 0%, 10%);
+}
+
+input {
+	margin: 5px;
+	padding: 3px;
+	color: hsl(0, 0%, 95%);
+	font-size: 15px;
+	font-family: monospace;
+	text-align: center;
+	text-shadow: 0 0 3px hsl(0, 0%, 0%);
+	border-radius: 3px;
+	box-shadow: inset 0 0 5px hsl(0, 0%, 10%);
+	background: hsl(0, 0%, 22.5%);
+	border: 1px solid hsl(0, 0%, 15%);
+}
+
+input:focus {
+	outline: none;
+}
+
+button {
+	color: hsl(0, 0%, 95%);
+	font-size: 15px;
+	font-family: "Noto Serif", "Droid Serif", serif;
+	font-weight: bold;
+	text-shadow: 0 0 3px hsl(0, 0%, 15%);
+	margin: 5px 0;
+	background: hsl(0, 0%, 25%);
+	border: none;
+	border-radius: 3px;
+	box-shadow: 0 0 10px hsl(0, 0%, 10%);
+	transition: background 0.5s;
+}
+
+button:hover {
+	background: hsl(0, 0%, 35%);
+}
+
+button:active {
+	box-shadow: none/* 0 0 10px hsl(0, 0%, 15%); */
+}
+
+pre {
+	text-align: left;
+	color: hsl(0, 0%, 95%);
+	text-shadow: 0 0 3px hsl(0, 0%, 10%);
+	background: #0000;
+	overflow: auto;
+	padding: 10px;
+}
+
+#flightInfo, #metars {
+	font-size: 15px;
+	line-height: 20px;
+	white-space: pre-wrap;
+}
+
+#ofpHeader {
+	cursor: pointer;
+}
+
+#ofp {
+	height: 500px;
+	overflow: scroll;
+	background: hsl(0, 0%, 20%);
+}
+
+.ofp {
+	width: fit-content;
+	margin: 0 auto;
+	text-align: left;
+}
+
+#map {
+	display: inline-block;
+	width: 100%;
+	aspect-ratio: 1.5;
+	border-radius: 10px;
+}
