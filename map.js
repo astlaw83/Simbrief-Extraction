@@ -1,7 +1,7 @@
 let map;
 let scale = 15;
 const triangle = L.icon({
-	iconUrl: "marker-icon.png",
+	iconUrl: "src/marker-icon.png",
 	iconSize: [250 / scale, 232 / scale],
 	iconAnchor: [122 / scale, 150 / scale],
 	popupAnchor: [0, 0],
