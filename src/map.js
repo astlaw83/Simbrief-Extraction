@@ -7,9 +7,9 @@ const triangle = L.icon({
 	popupAnchor: [0, 0],
 });
 
-function initMap(waypoints) {
+function initMap(waypoints, altRoutes) {
 	// create the map
-	map = L.map('map', {
+	map = L.map("map", {
 		fullscreenControl: true,
 		zoom: 13
 	});
@@ -34,7 +34,7 @@ function initMap(waypoints) {
 		marker.bindTooltip(`<strong>${waypoint.ident}</strong><br/>${waypoint.name}<br/>${waypoint.info || ""}`);
 
 		if (i < waypoints.length) {
-			let leg = L.polyline([
+			L.polyline([
 				[lat, long],
 				[waypoints[i].lat, waypoints[i].long]
 			]).addTo(map);
@@ -53,6 +53,43 @@ function initMap(waypoints) {
 
 		i++;
 	}
+
+	// alternate waypoints
+	for (let waypointsSet of altRoutes) {
+		i = 1;
+		for (let waypoint of waypointsSet) {
+			let lat = waypoint.lat;
+			let long = waypoint.long;
+
+			// add the marker and a line going to the next waypoint
+			let marker = L.marker([lat, long], {icon: triangle}).addTo(map);
+			marker.bindTooltip(`<strong>${waypoint.ident}</strong><br/>${waypoint.name}<br/>${waypoint.info || ""}`);
+
+			if (i < waypointsSet.length) {
+				L.polyline([
+					[lat, long],
+					[waypointsSet[i].lat, waypointsSet[i].long]
+				], {
+					dashArray: "5, 10",
+					color: "red"
+				}).addTo(map);
+
+				// add a thicker invisible line to make the tooltip easier to access
+				let tipLine = L.polyline([
+					[lat, long],
+					[waypointsSet[i].lat, waypointsSet[i].long]
+				], {
+					color: "#0000",
+					weight: 20,
+					opacity: 0,
+				}).addTo(map);
+				tipLine.bindTooltip(waypoint.via_airway, {sticky: true});
+			}
+
+			i++;
+		}
+	}
+
 }
 
 // https://tile.openstreetmap.org/{z}/{x}/{y}.png

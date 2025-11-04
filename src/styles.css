@@ -101,8 +101,10 @@ pre {
 	border-radius: 5px;
 }
 
-#ofp-header {
-	cursor: pointer;
+#ofp-flex-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 }
 
 #ofp {
@@ -130,7 +132,7 @@ pre {
 	background: #c00;
 	border-radius: 20px;
 	box-shadow: 0 0 5px hsl(0, 0%, 10%);
-	transition: background 0.5s;
+	transition: background 0.35s;
 }
 
 .slide-label::before {
@@ -138,10 +140,10 @@ pre {
 	display: block;
 	height: 20px;
 	aspect-ratio: 1;
-	background: #fff;
+	background: hsl(0, 0%, 95%);
 	border-radius: 50%;
 	box-shadow: 0 0 5px hsl(0, 0%, 10%);
-	transition: transform 0.5s;
+	transition: transform 0.35s;
 }
 
 #decode-checkbox:checked + .slide-label {

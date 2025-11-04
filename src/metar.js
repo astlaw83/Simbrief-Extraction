@@ -19,9 +19,6 @@ async function fetchMetar(icao) {
 }
 
 async function refreshMetars() {
-	// clear the current metars
-	metar.textContent = "";
-
 	// get the new metars
 	depMetar = await fetchMetar(flightPlan.origin.icao_code);
 	arrMetar = await fetchMetar(flightPlan.destination.icao_code);

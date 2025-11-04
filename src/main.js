@@ -31,9 +31,10 @@ async function fetchFlightPlan() {
 
 	// fetch the waypoints
 	let waypoints = decodeWaypoints();
+	let altRoutes = decodeAlternates();
 
 	// initialise the map with the waypoints
-	initMap(waypoints);
+	initMap(waypoints, altRoutes);
 
 	// do not allow the user to fetch another flight plan
 	document.getElementById("fetch-plan").removeEventListener("click", fetchFlightPlan);
@@ -78,7 +79,7 @@ function decodeWaypoints() {
 	let waypoints = [];
 
 	// start with the departure airport
-	let origin = flightPlan.origin;
+	const origin = flightPlan.origin;
 	let ident = origin.icao_code;
 	let name = origin.name;
 	let lat = origin.pos_lat;
@@ -97,7 +98,7 @@ function decodeWaypoints() {
 		let long = fix.pos_long;
 		let via_airway = "0";
 		if (i < flightPlan.navlog.fix.length) via_airway = flightPlan.navlog.fix[i].via_airway;
-		let info = undefined;
+		let info;
 		if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
 		let waypoint = {ident, name, lat, long, via_airway, info};
@@ -106,6 +107,90 @@ function decodeWaypoints() {
 	}
 
 	return waypoints;
+}
+
+function decodeAlternates() {
+	let altRoutes = [];
+	let alternateCount;
+
+	// get the number of alternates
+	if (Array.isArray(flightPlan.alternate)) {
+		alternateCount = flightPlan.alternate.length;
+	} else if (flightPlan.alternate.icao_code) {
+		alternateCount = 1;
+	} else {
+		// return if none
+		return [];
+	}
+
+	// loop through if more than one alternate
+	if (alternateCount > 1) {
+		for (let altNavlog of flightPlan.alternate_navlog) {
+			let waypoints = [];
+
+			// add the destination airport (that is where the alternate route starts from)
+			const destination = flightPlan.destination;
+			let ident = destination.icao_code;
+			let name = destination.name;
+			let lat = destination.pos_lat;
+			let long = destination.pos_long;
+			let via_airway = altNavlog.fix[0].via_airway;
+
+			let waypoint = {ident, name, lat, long, via_airway};
+			waypoints.push(waypoint);
+
+			let i = 1;
+			for (let fix of altNavlog.fix) {
+				let ident = fix.ident;
+				let name = fix.name;
+				let lat = fix.pos_lat;
+				let long = fix.pos_long;
+				let via_airway = "0";
+				if (i < altNavlog.fix.length) via_airway = altNavlog.fix[i].via_airway;
+				let info;
+				if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
+
+				let waypoint = {ident, name, lat, long, via_airway, info};
+				waypoints.push(waypoint);
+				i++;
+			}
+			altRoutes.push(waypoints);
+		}
+	} else {
+		let waypoints = [];
+
+		// add the destination airport (that is where the alternate route starts from)
+		const destination = flightPlan.destination;
+		let ident = destination.icao_code;
+		let name = destination.name;
+		let lat = destination.pos_lat;
+		let long = destination.pos_long;
+		let via_airway = flightPlan.alternate_navlog.fix[0].via_airway;
+
+		let waypoint = {ident, name, lat, long, via_airway};
+		waypoints.push(waypoint);
+
+		let i = 1;
+		for (let fix of flightPlan.alternate_navlog.fix) {
+
+			let ident = fix.ident;
+			let name = fix.name;
+			let lat = fix.pos_lat;
+			let long = fix.pos_long;
+			let via_airway = "0";
+			if (i < flightPlan.alternate_navlog.fix.length) via_airway = flightPlan.alternate_navlog.fix[i].via_airway;
+			let info;
+			if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
+
+			let waypoint = {ident, name, lat, long, via_airway, info};
+			waypoints.push(waypoint);
+			i++;
+		}
+
+		altRoutes.push(waypoints);
+	}
+
+	return altRoutes;
 }
 
 function saveID() {
@@ -179,6 +264,6 @@ function secondsToHours(seconds) {
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;
 }
 
-document.getElementById("ofp-header").addEventListener("click", () => ofp.requestFullscreen());
+document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
 document.getElementById("save-ID").addEventListener("click", saveID);
 document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan);
