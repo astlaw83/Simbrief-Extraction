@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>Simbrief Extraction</title>
+		<!-- <link rel="" href=""/> -->
+		<link href="styles.css" rel="stylesheet"/>
+		<!-- <link href="favicon.ico" rel="icon" type="image/x-icon"/> -->
+
+		<!-- js library for the map -->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+		<!-- fullscreen button -->
+		<link rel="stylesheet" href="Control.FullScreen.css" />
+		<script src="Control.FullScreen.js"></script>
+	</head>
+
+	<body>
+		<section>
+			<h1>Simbrief ID</h1>
+			<input id="simbriefID" placeholder="123456"></input>
+			<br/>
+			<button id="saveID">Save ID</button>
+			<button id="fetchPlan">Fetch Flight Plan</button>
+		</section>
+
+		<br/>
+
+		<section>
+			<h1>Flight Information</h1>
+			<pre id="flightInfo" readonly></pre>
+		</section>
+
+		<br/>
+
+		<section>
+			<h1 id="ofpHeader" title="Click for Fullscreen">OFP</h1>
+			<div id="ofp"></div>
+		</section>
+
+		<br/>
+
+		<section>
+			<h1 id="mapHeader">Route Map</h1>
+			<div id="map"></div>
+		</section>
+
+		<script src="map.js"></script>
+		<script src="main.js"></script>
+	</body>
+</html>
