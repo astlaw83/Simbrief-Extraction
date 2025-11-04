@@ -1,4 +1,5 @@
 let flightPlan;
+let loaded = false;
 const simbriefID = document.getElementById("simbrief-ID");
 const flightInfo = document.getElementById("flight-info");
 const ofp = document.getElementById("ofp");
@@ -16,13 +17,14 @@ async function fetchFlightPlan() {
 
 	let response = await fetch(url); // wait for the request to complete
 	flightPlan = await response.json(); // parse JSON data
-	if (!response.ok) {
-		let error = "";
 
+	if (!response.ok) {
 		console.log(response);
 		console.log(flightPlan);
 		alert(`Server error (SimBrief): ${response.status}\n${flightPlan.fetch.status}`);
 		throw new Error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
+	} else {
+		loaded = true;
 	}
 
 	populateFlightData();
@@ -130,7 +132,7 @@ function updateClocks() {
 	let clock = document.getElementById("c1");
 	clock.textContent = `UTC\n${hours}:${minutes}:${seconds} Z`;
 
-	if (flightPlan) {
+	if (loaded) {
 		let timezone = flightPlan.origin.timezone;
 
 		// get the timstamp for the local time at origin airport
