@@ -14,15 +14,16 @@ async function fetchFlightPlan() {
 	let url = `https://www.simbrief.com/api/xml.fetcher.php?userid=${userID}&json=1`;
 
 	let response = await fetch(url); // wait for the request to complete
+	flightPlan = await response.json(); // parse JSON data
 	if (!response.ok) {
 		let error = "";
-		if (response.status == 400) error = "Bad Request";
 
-		alert(`Server error (SimBrief): ${response.status} ${response.statusText}\n${error}`);
-		throw new Error(`Server error: ${response.status} ${response.statusText}`);
+		console.log(response);
+		console.log(flightPlan)
+		alert(`Server error (SimBrief): ${response.status}\n${flightPlan.fetch.status}`);
+		throw new Error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
 	}
 
-	flightPlan = await response.json(); // parse JSON data
 	populateFlightData();
 
 	// fetch the waypoints
@@ -63,7 +64,7 @@ async function refreshMetars() {
 	let destination = await fetchMetar(flightPlan.destination.icao_code);
 
 	// display them
-	metar.textContent += origin +"\n\n";
+	metar.textContent += origin + "\n\n";
 	metar.textContent += destination;
 }
 
@@ -109,7 +110,7 @@ function decodeWaypoints() {
 	let via_airway = flightPlan.navlog.fix[0].via_airway;
 
 	// add the data as an object to the array
-	let waypoint = {ident, name, lat, long, via_airway};
+	let waypoint = { ident, name, lat, long, via_airway };
 	waypoints.push(waypoint);
 
 	let i = 1;
@@ -123,7 +124,7 @@ function decodeWaypoints() {
 		let info = undefined;
 		if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
-		let waypoint = {ident, name, lat, long, via_airway, info};
+		let waypoint = { ident, name, lat, long, via_airway, info };
 		waypoints.push(waypoint);
 		i++;
 	}
@@ -137,6 +138,63 @@ function saveID() {
 
 	// put the id in localStorage
 	localStorage.setItem("userID", userID);
+}
+
+function getTimestamp(offsetHours) {
+	let utc = Date.now();
+	return utc + (offsetHours * 3600000);
+}
+
+updateClocks();
+function updateClocks() {
+	// get the utc time
+	let hours = String(new Date().getUTCHours()).padStart(2, "0");
+	let minutes = String(new Date().getUTCMinutes()).padStart(2, "0");
+	let seconds = String(new Date().getUTCSeconds()).padStart(2, "0");
+
+	// display the utc time
+	let clock = document.getElementById("c1");
+	clock.textContent = `UTC\n${hours}:${minutes}:${seconds} Z`;
+
+	if (flightPlan) {
+		let timezone = flightPlan.origin.timezone;
+
+		// get the timstamp for the local time at origin airport
+		let date = new Date(getTimestamp(timezone));
+
+		// get components
+		let hours = String(date.getUTCHours()).padStart(2, "0");
+		let minutes = String(date.getUTCMinutes()).padStart(2, "0");
+		let seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+		// add a plus sign in front of the offset if applicable
+		if (timezone > 0) timezone = "+" + timezone;
+
+		// display the time
+		clock = document.getElementById("c2");
+		clock.textContent = `${flightPlan.origin.icao_code}\n${hours}:${minutes}:${seconds} (${timezone})`;
+
+
+		// repeat for the destination
+		timezone = flightPlan.destination.timezone;
+
+		// get the timstamp for the local time at destination airport
+		date = new Date(getTimestamp(timezone));
+
+		// get components
+		hours = String(date.getUTCHours()).padStart(2, "0");
+		minutes = String(date.getUTCMinutes()).padStart(2, "0");
+		seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+		// add a plus sign in front of the offset if applicable
+		if (timezone > 0) timezone = "+" + timezone;
+
+		// display the time
+		clock = document.getElementById("c3");
+		clock.textContent = `${flightPlan.destination.icao_code}\n${hours}:${minutes}:${seconds} (${timezone})`;
+	}
+
+	requestAnimationFrame(updateClocks);
 }
 
 function secondsToHours(seconds) {
