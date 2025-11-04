@@ -1,7 +1,8 @@
 let flightPlan;
-const simbriefID = document.getElementById("simbriefID");
-const flightInfo = document.getElementById("flightInfo");
+const simbriefID = document.getElementById("simbrief-ID");
+const flightInfo = document.getElementById("flight-info");
 const ofp = document.getElementById("ofp");
+const decode = document.getElementById("decode-checkbox");
 const metar = document.getElementById("metars");
 
 // check if an id has been saved
@@ -19,7 +20,7 @@ async function fetchFlightPlan() {
 		let error = "";
 
 		console.log(response);
-		console.log(flightPlan)
+		console.log(flightPlan);
 		alert(`Server error (SimBrief): ${response.status}\n${flightPlan.fetch.status}`);
 		throw new Error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
 	}
@@ -33,39 +34,12 @@ async function fetchFlightPlan() {
 	initMap(waypoints);
 
 	// do not allow the user to fetch another flight plan
-	document.getElementById("fetchPlan").removeEventListener("click", fetchFlightPlan);
+	document.getElementById("fetch-plan").removeEventListener("click", fetchFlightPlan);
 
-	// add a button to refresh the metars
-	document.getElementById("refreshMetars").addEventListener("click", refreshMetars);
-}
-
-async function fetchMetar(icao) {
-	// get the metar from vatsim
-	let url = `https://metar.vatsim.net/${icao}`;
-	let response = await fetch(url);
-
-	if (!response.ok) {
-		alert(`Server error (VATSIM): ${response.status} ${response.statusText}`);
-		throw new Error(`Server error: ${response.status} ${response.statusText}`);
-	}
-
-	// parse the data
-	let metar = await response.text();
-
-	return metar;
-}
-
-async function refreshMetars() {
-	// clear the current metars
-	metar.textContent = "";
-
-	// get the new metars
-	let origin = await fetchMetar(flightPlan.origin.icao_code);
-	let destination = await fetchMetar(flightPlan.destination.icao_code);
-
-	// display them
-	metar.textContent += origin + "\n\n";
-	metar.textContent += destination;
+	// enable button to refresh the metars
+	document.getElementById("refresh-metars").addEventListener("click", refreshMetars);
+	// enable decode toggle
+	decode.addEventListener("click", displayMetars);
 }
 
 function populateFlightData() {
@@ -110,7 +84,7 @@ function decodeWaypoints() {
 	let via_airway = flightPlan.navlog.fix[0].via_airway;
 
 	// add the data as an object to the array
-	let waypoint = { ident, name, lat, long, via_airway };
+	let waypoint = {ident, name, lat, long, via_airway};
 	waypoints.push(waypoint);
 
 	let i = 1;
@@ -124,7 +98,7 @@ function decodeWaypoints() {
 		let info = undefined;
 		if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
-		let waypoint = { ident, name, lat, long, via_airway, info };
+		let waypoint = {ident, name, lat, long, via_airway, info};
 		waypoints.push(waypoint);
 		i++;
 	}
@@ -203,6 +177,6 @@ function secondsToHours(seconds) {
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;
 }
 
-document.getElementById("ofpHeader").addEventListener("click", () => ofp.requestFullscreen());
-document.getElementById("saveID").addEventListener("click", saveID);
-document.getElementById("fetchPlan").addEventListener("click", fetchFlightPlan);
+document.getElementById("ofp-header").addEventListener("click", () => ofp.requestFullscreen());
+document.getElementById("save-ID").addEventListener("click", saveID);
+document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan);

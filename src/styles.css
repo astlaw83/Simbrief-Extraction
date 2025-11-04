@@ -5,6 +5,7 @@ body, html {
 }
 
 h1 {
+	width: fit-content;
 	text-align: left;
 	font-family: "Noto Serif", "Droid Serif", serif;
 	margin: 10px 0;
@@ -55,6 +56,7 @@ button {
 
 button:hover {
 	background: hsl(0, 0%, 35%);
+	cursor: pointer;
 }
 
 button:active {
@@ -70,7 +72,7 @@ pre {
 	padding: 10px;
 }
 
-#flightInfo, #metars {
+#flight-info, #metars {
 	font-size: 15px;
 	line-height: 20px;
 	white-space: pre-wrap;
@@ -99,7 +101,7 @@ pre {
 	border-radius: 5px;
 }
 
-#ofpHeader {
+#ofp-header {
 	cursor: pointer;
 }
 
@@ -113,6 +115,51 @@ pre {
 	width: fit-content;
 	margin: 0 auto;
 	text-align: left;
+}
+
+.slide-checkbox {
+	display: none;
+}
+
+.slide-label {
+	height: 20px;
+	aspect-ratio: 2;
+	display: inline-block;
+	margin-left: 5px;
+	cursor: pointer;
+	background: #c00;
+	border-radius: 20px;
+	box-shadow: 0 0 5px hsl(0, 0%, 10%);
+	transition: background 0.5s;
+}
+
+.slide-label::before {
+	content: "";
+	display: block;
+	height: 20px;
+	aspect-ratio: 1;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 0 5px hsl(0, 0%, 10%);
+	transition: transform 0.5s;
+}
+
+#decode-checkbox:checked + .slide-label {
+	background: #0a0;
+}
+
+#decode-checkbox:checked + .slide-label::before {
+	transform: translateX(20px);
+}
+
+#decode {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	color: hsl(0, 0%, 95%);
+	font-family: sans-serif;
+	font-size: 15px;
+	text-shadow: 0 0 3px hsl(0, 0%, 5%);
 }
 
 #map {

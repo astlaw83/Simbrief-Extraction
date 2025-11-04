@@ -20,10 +20,10 @@
 	<body>
 		<section>
 			<h1>Simbrief ID</h1>
-			<input id="simbriefID" placeholder="123456"></input>
+			<input id="simbrief-ID" placeholder="123456"></input>
 			<br/>
-			<button id="saveID">Save ID</button>
-			<button id="fetchPlan">Fetch Flight Plan</button>
+			<button id="save-ID">Save ID</button>
+			<button id="fetch-plan">Fetch Flight Plan</button>
 		</section>
 
 		<br/>
@@ -41,13 +41,13 @@
 
 		<section>
 			<h1>Flight Information</h1>
-			<pre id="flightInfo"></pre>
+			<pre id="flight-info"></pre>
 		</section>
 
 		<br/>
 
 		<section>
-			<h1 id="ofpHeader" title="Click for Fullscreen">OFP</h1>
+			<h1 id="ofp-header" title="Click for Fullscreen">OFP</h1>
 			<div id="ofp"></div>
 		</section>
 
@@ -55,18 +55,24 @@
 
 		<section>
 			<h1>Live METAR (VATSIM)</h1>
+			<div id="decode">
+				<label for="slide1">Decode</label>
+				<input type="checkbox" id="decode-checkbox" class="slide-checkbox"/>
+				<label for="decode-checkbox" class="slide-label"></label>
+			</div>
 			<pre id="metars"></pre>
-			<button id="refreshMetars">Refresh</button>
+			<button id="refresh-metars">Refresh</button>
 		</section>
 
 		<br/>
 
 		<section>
-			<h1 id="mapHeader">Route Map</h1>
+			<h1>Route Map</h1>
 			<div id="map"></div>
 		</section>
 
 		<script src="map.js"></script>
+		<script src="metar.js"></script>
 		<script src="main.js"></script>
 	</body>
 </html>
