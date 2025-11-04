@@ -1,7 +1,8 @@
 let flightPlan;
+const simbriefID = document.getElementById("simbriefID");
 const flightInfo = document.getElementById("flightInfo");
 const ofp = document.getElementById("ofp");
-const simbriefID = document.getElementById("simbriefID");
+const metar = document.getElementById("metars");
 
 // check if an id has been saved
 let savedID = localStorage.getItem("userID");
@@ -17,12 +18,12 @@ async function fetchFlightPlan() {
 		let error = "";
 		if (response.status == 400) error = "Bad Request";
 
-		alert(`Server error: ${response.status} ${response.statusText}\n${error}`);
+		alert(`Server error (SimBrief): ${response.status} ${response.statusText}\n${error}`);
 		throw new Error(`Server error: ${response.status} ${response.statusText}`);
 	}
 
 	flightPlan = await response.json(); // parse JSON data
-	populateFlightInfo();
+	populateFlightData();
 
 	// fetch the waypoints
 	let waypoints = decodeWaypoints();
@@ -30,17 +31,50 @@ async function fetchFlightPlan() {
 	// initialise the map with the waypoints
 	initMap(waypoints);
 
+	// do not allow the user to fetch another flight plan
 	document.getElementById("fetchPlan").removeEventListener("click", fetchFlightPlan);
+
+	// add a button to refresh the metars
+	document.getElementById("refreshMetars").addEventListener("click", refreshMetars);
 }
 
-function populateFlightInfo() {
+async function fetchMetar(icao) {
+	// get the metar from vatsim
+	let url = `https://metar.vatsim.net/${icao}`;
+	let response = await fetch(url);
+
+	if (!response.ok) {
+		alert(`Server error (VATSIM): ${response.status} ${response.statusText}`);
+		throw new Error(`Server error: ${response.status} ${response.statusText}`);
+	}
+
+	// parse the data
+	let metar = await response.text();
+
+	return metar;
+}
+
+async function refreshMetars() {
+	// clear the current metars
+	metar.textContent = "";
+
+	// get the new metars
+	let origin = await fetchMetar(flightPlan.origin.icao_code);
+	let destination = await fetchMetar(flightPlan.destination.icao_code);
+
+	// display them
+	metar.textContent += origin +"\n\n";
+	metar.textContent += destination;
+}
+
+function populateFlightData() {
 	let data = {
 		Callsign: flightPlan.atc.callsign,
 		Departure: `${flightPlan.origin.icao_code}/${flightPlan.origin.plan_rwy}`,
 		Destination: `${flightPlan.destination.icao_code}/${flightPlan.destination.plan_rwy}`,
 		"Initial Altitude": flightPlan.general.initial_altitude,
 		Distance: `${flightPlan.general.route_distance}nm`,
-		"Block Time": minutesToHours(flightPlan.times.est_block),
+		"Block Time": secondsToHours(flightPlan.times.est_block),
 		Route: flightPlan.general.route,
 	};
 
@@ -57,6 +91,9 @@ function populateFlightInfo() {
 	ofp.innerHTML = flightPlan.text.plan_html;
 	// style the ofp text
 	ofp.children[0].children[0].classList.add("ofp");
+
+	// fill in the metar
+	refreshMetars();
 }
 
 function decodeWaypoints() {
@@ -102,7 +139,7 @@ function saveID() {
 	localStorage.setItem("userID", userID);
 }
 
-function minutesToHours(seconds) {
+function secondsToHours(seconds) {
 	let minutes = Math.floor(seconds / 60);
 	let hours = Math.floor(minutes / 60);
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;

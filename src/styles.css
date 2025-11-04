@@ -70,8 +70,7 @@ pre {
 	padding: 10px;
 }
 
-#flightInfo {
-	text-align: left;
+#flightInfo, #metars {
 	font-size: 15px;
 	line-height: 20px;
 	white-space: pre-wrap;
