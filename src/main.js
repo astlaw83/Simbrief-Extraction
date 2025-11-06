@@ -264,6 +264,14 @@ function secondsToHours(seconds) {
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;
 }
 
-document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
 document.getElementById("save-ID").addEventListener("click", saveID);
 document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan);
+document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
+document.getElementById("dimmer").addEventListener("click", () => {
+	const overlay = document.getElementById("dim-overlay");
+	if (getComputedStyle(overlay).visibility == "hidden") {
+		overlay.style.visibility = "visible";
+	} else {
+		overlay.style.visibility = "hidden";
+	}
+});

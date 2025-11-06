@@ -1,6 +1,6 @@
 body, html {
 	text-align: center;
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	background: hsl(0, 0%, 15%);
 }
 
@@ -25,7 +25,7 @@ section {
 input {
 	margin: 5px;
 	padding: 3px;
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	font-size: 15px;
 	font-family: monospace;
 	text-align: center;
@@ -41,7 +41,7 @@ input:focus {
 }
 
 button {
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	font-size: 15px;
 	font-family: "Noto Serif", "Droid Serif", serif;
 	font-weight: bold;
@@ -65,7 +65,7 @@ button:active {
 
 pre {
 	text-align: left;
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	text-shadow: 0 0 3px hsl(0, 0%, 10%);
 	background: #0000;
 	overflow: auto;
@@ -79,7 +79,7 @@ pre {
 }
 
 #clock {
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	font-family: monospace;
 	font-size: 0;
 	text-shadow: 0 0 3px hsl(0, 0%, 10%);
@@ -158,13 +158,33 @@ pre {
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	color: hsl(0, 0%, 95%);
+	color: hsl(0, 0%, 90%);
 	font-family: sans-serif;
 	font-size: 15px;
 	text-shadow: 0 0 3px hsl(0, 0%, 5%);
 }
 
+#map-flex-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+#dim-overlay {
+	position: relative;
+	z-index: 100;
+	pointer-events: none;
+	background: rgba(0, 0, 0, 0.5);
+	border-radius: 10px;
+	width: 100%;
+	aspect-ratio: 1.5;
+	margin-top: calc(-100% / 1.5 - 5px);
+	visibility: hidden;
+}
+
 #map {
+	position: relative;
+	z-index: 0;
 	display: inline-block;
 	width: 100%;
 	aspect-ratio: 1.5;
