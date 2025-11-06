@@ -6,7 +6,7 @@
 		<title>Simbrief Extraction</title>
 		<!-- <link rel="" href=""/> -->
 		<link href="styles.css" rel="stylesheet"/>
-		<!-- <link href="favicon.ico" rel="icon" type="image/x-icon"/> -->
+		<link href="favicon.png" rel="icon" type="image/png"/>
 
 		<!-- js library for the map -->
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -70,8 +70,12 @@
 		<br/>
 
 		<section>
-			<h1>Route Map</h1>
+			<div id="map-flex-header">
+				<h1>Route Map</h1>
+				<button id="dimmer">Dim Map</button>
+			</div>
 			<div id="map"></div>
+			<div id="dim-overlay"></div>
 		</section>
 
 		<script src="map.js"></script>
