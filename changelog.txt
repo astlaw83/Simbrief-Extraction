@@ -6,6 +6,6 @@ v1.3.1 - BUG FIX: Invalid ID causes clock to throw error and stop updating
 v1.4.0 - Routes to alternate airports are displayed on the map
        - Fullscreen button for OFP
 v1.5.0 - Favicon
-       - Better night optimisations:
+       - Better night ops:
           - Slightly darker text colour
-          - Dim mode for map
+          - Map now available in dark mode
