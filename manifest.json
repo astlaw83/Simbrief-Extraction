@@ -1,8 +1,11 @@
 {
 	"name": "Simbrief Extraction",
-	"short name": "Simbbrief Extraction",
-	"start_url": "/",
+	"description": "A small program that displays data from your latest simbrief flight plan",
+	"short name": "Simbrief Extraction",
+	"start_url": "index.html",
 	"display": "standalone",
+	"background_color": "#333",
+	"theme_color": "#333",
 	"icons": [
 		{
 			"src": "icons/icon-32x32.png",

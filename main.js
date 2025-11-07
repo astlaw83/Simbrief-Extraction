@@ -1,5 +1,6 @@
 let flightPlan;
 let loaded = false;
+let requested = false;
 const simbriefID = document.getElementById("simbrief-ID");
 const flightInfo = document.getElementById("flight-info");
 const ofp = document.getElementById("ofp");
@@ -10,7 +11,21 @@ const metar = document.getElementById("metars");
 let savedID = localStorage.getItem("userID");
 if (savedID) simbriefID.value = savedID;
 
+// check for service worker
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.register('service-worker.js')
+		.then(() => console.log('Blank Service Worker registered'))
+		.catch(console.error);
+}
+
 async function fetchFlightPlan() {
+	// if already initialised don't re-init
+	if (requested) {
+		return;
+	}
+
+	requested = true;
+
 	// get the inputted ID
 	let userID = simbriefID.value;
 	let url = `https://www.simbrief.com/api/xml.fetcher.php?userid=${userID}&json=1`;
@@ -38,7 +53,6 @@ async function fetchFlightPlan() {
 
 	// do not allow the user to fetch another flight plan
 	document.getElementById("fetch-plan").removeEventListener("click", fetchFlightPlan);
-
 	// enable button to refresh the metars
 	document.getElementById("refresh-metars").addEventListener("click", refreshMetars);
 	// enable decode toggle
@@ -264,14 +278,6 @@ function secondsToHours(seconds) {
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;
 }
 
+document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
 document.getElementById("save-ID").addEventListener("click", saveID);
 document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan);
-document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
-document.getElementById("dimmer").addEventListener("click", () => {
-	const overlay = document.getElementById("dim-overlay");
-	if (getComputedStyle(overlay).visibility == "hidden") {
-		overlay.style.visibility = "visible";
-	} else {
-		overlay.style.visibility = "hidden";
-	}
-});
