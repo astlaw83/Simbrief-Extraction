@@ -12,11 +12,10 @@ let savedID = localStorage.getItem("userID");
 if (savedID) simbriefID.value = savedID;
 
 async function fetchFlightPlan() {
-	// if already initialised don't re-init
-	if (requested) {
-		return;
-	}
+	loaded = false;
 
+	// limit requests
+	if (requested) return;
 	requested = true;
 
 	// get the inputted ID
@@ -28,13 +27,12 @@ async function fetchFlightPlan() {
 
 	if (!response.ok) {
 		console.log(response);
-		console.log(flightPlan);
+		requested = false;
 		alert(`Server error (SimBrief): ${response.status}\n${flightPlan.fetch.status}`);
 		throw new Error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
 	} else {
 		loaded = true;
 	}
-
 
 	populateFlightData();
 
@@ -45,12 +43,13 @@ async function fetchFlightPlan() {
 	// initialise the map with the waypoints
 	initMap(waypoints, altRoutes);
 
-	// do not allow the user to fetch another flight plan
-	document.getElementById("fetch-plan").removeEventListener("click", fetchFlightPlan);
 	// enable button to refresh the metars
 	document.getElementById("refresh-metars").addEventListener("click", refreshMetars);
 	// enable decode toggle
 	decode.addEventListener("click", displayMetars);
+
+	// allow more requests
+	requested = false;
 }
 
 function populateFlightData() {
@@ -58,8 +57,8 @@ function populateFlightData() {
 		Callsign: flightPlan.atc.callsign,
 		Departure: `${flightPlan.origin.icao_code}/${flightPlan.origin.plan_rwy}`,
 		Destination: `${flightPlan.destination.icao_code}/${flightPlan.destination.plan_rwy}`,
-		"Initial Altitude": flightPlan.general.initial_altitude,
-		Distance: `${flightPlan.general.route_distance}nm`,
+		"Initial Altitude": flightPlan.general.initial_altitude + "ft",
+		Distance: flightPlan.general.route_distance + "nm",
 		"Block Time": secondsToHours(flightPlan.times.est_block),
 		Route: flightPlan.general.route,
 	};

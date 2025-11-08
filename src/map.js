@@ -8,6 +8,11 @@ const triangle = L.icon({
 });
 
 function initMap(waypoints, altRoutes) {
+	// remove the current map if there is one
+	if (map) {
+		map.remove();
+	}
+
 	// create the map
 	map = L.map("map", {
 		fullscreenControl: true,
@@ -97,6 +102,7 @@ function initMap(waypoints, altRoutes) {
 
 			// add the marker and a line going to the next waypoint
 			let marker = L.marker([lat, long], {icon: triangle}).addTo(map);
+			marker._icon.classList.add("dark");
 			marker.bindTooltip(`<strong>${waypoint.ident}</strong><br/>${waypoint.name}<br/>${waypoint.info || ""}`);
 
 			if (i < waypointsSet.length) {
