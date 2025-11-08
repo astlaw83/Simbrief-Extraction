@@ -9,3 +9,7 @@ v1.5.0 - Favicon
        - Better night ops:
           - Slightly darker text colour
           - Map now available in dark mode
+v1.6.0 - Fetch Flight Plan now clears the currently loaded one - no need to reload the page
+       - BUG FIXES:
+          - Waypoint markers for alternate routes do not initialise with the right style
+          - An invalid ID error prevents all further flight plan requests
