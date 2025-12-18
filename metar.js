@@ -1,27 +1,59 @@
-// globals to store the metars
+const flightPlanMetars = document.getElementById("flight-plan-metars");
+const searchMetarInput = document.getElementById("search-metar-icao");
+const searchMetarButton = document.getElementById("search-metar-button");
+const searchMetarOutput = document.getElementById("search-metar");
+
+// globals to store the airport idents & metars
 let depMetar = "";
 let arrMetar = "";
+let searchMetar = "";
 
-async function fetchMetar(icao) {
-	// get the metar from vatsim
-	let url = `https://metar.vatsim.net/${icao}`;
-	let response = await fetch(url);
-
-	if (!response.ok) {
-		alert(`Server error (VATSIM): ${response.status} ${response.statusText}`);
-		throw new Error(`Server error: ${response.status} ${response.statusText}`);
+class Metar {
+	constructor(icao) {
+		this.icao = icao;
 	}
 
-	// parse the data
-	let metar = await response.text();
+	static async create(icao) {
+		let metar = new Metar(icao);
+		await metar.update();
+		return metar;
+	}
 
-	return metar;
+	async update() {
+		// get the metar from vatsim
+		let url = `https://metar.vatsim.net/${this.icao}`;
+
+		let response;
+		try {
+			response = await fetch(url); // wait for the request to complete
+		} catch (err) {
+			console.error(err);
+			alert(`Failed to fetch METAR. Check your internet connection`);
+			return;
+		}
+
+		if (!response.ok) {
+			alert(`Server error (VATSIM): ${response.status} ${response.statusText}`);
+			throw new Error(`Server error: ${response.status} ${response.statusText}`);
+		}
+
+		// parse the data
+		this.raw = await response.text();
+	}
+}
+
+async function initMetars() {
+	// create metars
+	depMetar = await Metar.create(flightPlan.origin.icao_code);
+	arrMetar = await Metar.create(flightPlan.destination.icao_code);
+
+	displayMetars();
 }
 
 async function refreshMetars() {
-	// get the new metars
-	depMetar = await fetchMetar(flightPlan.origin.icao_code);
-	arrMetar = await fetchMetar(flightPlan.destination.icao_code);
+	// update metars
+	await depMetar.update();
+	await arrMetar.update();
 
 	// display the new metars
 	displayMetars();
@@ -30,15 +62,32 @@ async function refreshMetars() {
 function displayMetars() {
 	// if decode is enabled, show the decoded version, otherwise raw
 	if (decode.checked) {
-		metar.textContent = decodeMetar(depMetar) + "\n\n";
-		metar.textContent += decodeMetar(arrMetar);
+		flightPlanMetars.textContent = decodeMetar(depMetar.raw, depMetar.icao) + "\n\n";
+		flightPlanMetars.textContent += decodeMetar(arrMetar.raw, arrMetar.icao) || "Not available";
 	} else {
-		metar.textContent = depMetar + "\n\n";
-		metar.textContent += arrMetar;
+		flightPlanMetars.textContent = ((depMetar.raw == "") ? `Metar for ${depMetar.icao} not available` : depMetar.raw) + "\n\n";
+		flightPlanMetars.textContent += ((arrMetar.raw == "") ? `Metar for ${arrMetar.icao} not available` : arrMetar.raw);
 	}
 }
 
-function decodeMetar(raw) {
+async function displaySearchMetar() {
+	// get the metar for icao
+	searchMetar = await Metar.create(searchMetarInput.value);
+
+	// return if no metar has been requested
+	if (searchMetarInput == "") return;
+
+	if (decode.checked) {
+		searchMetarOutput.textContent = decodeMetar(searchMetar.raw, searchMetar.icao);
+	} else {
+		searchMetarOutput.textContent = (searchMetar.raw == "") ? `Metar for ${searchMetar.icao} not available` : searchMetar.raw;
+	}
+}
+
+function decodeMetar(raw, icao) {
+	// tell user if metar is not available
+	if (raw == "") return `Metar for ${icao} not available`;
+
 	// remove identifier and resulting whitespace at start
 	let trimmed = raw.slice(4, raw.length);
 
@@ -56,7 +105,6 @@ function decodeMetar(raw) {
 	let parts = {
 		icao: raw.slice(0, 4),
 		age: trimmed.match(age),
-		raw: raw,
 		wind: trimmed.match(wind),
 		varying: trimmed.match(varying),
 		vis: trimmed.match(visibility),
@@ -177,3 +225,16 @@ function decodeMetar(raw) {
 	// turn into a paragraph
 	return `METAR for ${parts.icao}. Issued at ${parts.age[0].slice(0, 2)}:${parts.age[0].slice(2, 4)} UTC. Wind ${parts.wind[0]}${gusting}${parts.varying[0]}. ${parts.vis[0]}. ${cloudWords}Temperature ${parts.tempDew[0]}. ${parts.pressure[0]}.`;
 }
+
+// function for decoding the metars. It is a variable because we add to it when a flight plan is available
+let decodeFunction = () => displaySearchMetar();
+decode.addEventListener("click", () => decodeFunction());
+
+searchMetarInput.addEventListener("keydown", e => {
+	if (e.key == "Enter") {
+		searchMetarButton.click();
+		searchMetarInput.blur();
+	}
+});
+
+searchMetarButton.addEventListener("click", displaySearchMetar);

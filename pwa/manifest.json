@@ -3,6 +3,7 @@
 	"description": "A small program that displays data from your latest simbrief flight plan",
 	"short_name": "Simbrief Extraction",
 	"start_url": "/Simbrief-Extraction/",
+	"id": "https://astlaw83.github.io/Simbrief-Extraction/",
 	"display": "standalone",
 	"background_color": "#333",
 	"theme_color": "#333",
