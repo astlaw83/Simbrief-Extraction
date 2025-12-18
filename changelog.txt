@@ -1,15 +1,42 @@
 v1.1.0 - VATSIM live METAR added
+
 v1.2.0 - Clock with UTC, departure local, and destination local times
+
 v1.3.0 - "Decode" option for METAR. Turns raw text into a readable paragraph
+
 v1.3.1 - BUG FIX: Invalid ID causes clock to throw error and stop updating
        - Semantic naming fix for decode label
+
 v1.4.0 - Routes to alternate airports are displayed on the map
        - Fullscreen button for OFP
+
 v1.5.0 - Favicon
        - Better night ops:
           - Slightly darker text colour
           - Map now available in dark mode
+
 v1.6.0 - Fetch Flight Plan now clears the currently loaded one - no need to reload the page
        - BUG FIXES:
           - Waypoint markers for alternate routes do not initialise with the right style
           - An invalid ID error prevents all further flight plan requests
+
+v1.7.0 - ScratchPad:
+          - Free draw and type options
+          - CRAFT and ATIS templates with drawing and typing options
+          - Save notes between sessions
+          - AutoSaving
+          - Bottom menu to switch between Briefing (original page) and ScratchPad
+
+       - Transmitter (by Jonathan Beckett) Integration
+          - Track your sim aircraft on the map
+          - Custom server support
+          - Live data table
+
+       - Route legs show distance of leg and true and magnetic track
+       - Pressing enter in an input field submits content e.g. fetches flight plan
+       - World METAR search
+       - Performance improved
+       - General and Mobile UI/UX improved
+
+       - BUG FIXES:
+         - Routes crossing the meridian are not displayed correctly
