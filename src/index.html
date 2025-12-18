@@ -13,77 +13,354 @@
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 		<!-- fullscreen button -->
-		 <!-- https://github.com/brunob/leaflet.fullscreen -->
-		<link rel="stylesheet" href="Control.FullScreen.css" />
-		<script src="Control.FullScreen.js"></script>
+		<!-- https://github.com/brunob/leaflet.fullscreen -->
+		<link rel="stylesheet" href="packages/Control.FullScreen.css" />
+		<script src="packages/Control.FullScreen.js"></script>
+
+		<!-- smooth zoom for better ux -->
+		<!-- https://github.com/mutsuyuki/Leaflet.SmoothWheelZoom -->
+		<script src="packages/SmoothWheelZoom.js"></script>
 
 		<!-- colour filters to make the map dark -->
 		<!-- https://github.com/xtk93x/Leaflet.TileLayer.ColorFilter -->
-		<script src="leaflet-tilelayer-colorfilter.js"></script>
+		<script src="packages/leaflet-tilelayer-colorfilter.js"></script>
+
+		<!-- rotate the plane icon -->
+		<!-- https://github.com/bbecquet/Leaflet.RotatedMarker -->
+		<script src="packages/leaflet.rotatedMarker.min.js"></script>
+
+		<!-- signature pad for the scratchpad -->
+		<!-- https://github.com/szimek/signature_pad -->
+		<script src="packages/signature_pad.umd.min.js"></script>
 	</head>
 
 	<body>
-		<section>
-			<h1>Simbrief ID</h1>
-			<input id="simbrief-ID" placeholder="123456"></input>
+		<div id="briefing">
+			<section>
+				<h1>Simbrief ID</h1>
+				<input id="simbrief-ID" type="number" placeholder="123456"></input>
+				<br/>
+				<button id="save-ID">Save ID</button>
+				<button id="fetch-plan">Fetch Flight Plan</button>
+			</section>
+
 			<br/>
-			<button id="save-ID">Save ID</button>
-			<button id="fetch-plan">Fetch Flight Plan</button>
-		</section>
 
-		<br/>
+			<section>
+				<h1>Clock</h1>
+				<div id="clock">
+					<div id="c1" class="clock float"></div>
+					<div id="c2" class="clock float"></div>
+					<div id="c3" class="clock float"></div>
+				</div>
+			</section>
 
-		<section>
-			<h1>Clock</h1>
-			<div id="clock">
-				<div id="c1" class="clock"></div>
-				<div id="c2" class="clock"></div>
-				<div id="c3" class="clock"></div>
+			<br/>
+
+			<section id="flightinformation">
+				<h1>Flight Information</h1>
+				<pre id="flight-info"></pre>
+			</section>
+
+			<br/>
+
+			<section>
+				<header id="ofp-flex-header">
+					<h1>OFP</h1>
+					<div>
+						<div id="ofp-text-size-buttons">
+							<button id="ofp-text-increase" title="Increase text size [Alt][=]">+</button>
+							<button id="ofp-text-decrease" title="Decrease text size [Alt][-]">-</button>
+						</div>
+						<button id="ofp-fullscreen">Fullscreen</button>
+					</div>
+				</header>
+				<div id="ofp-container"></div>
+			</section>
+
+			<br/>
+
+			<section>
+				<h1>Live METAR (VATSIM)</h1>
+				<div id="decode">
+					<label for="decode-checkbox">Decode</label>
+					<input type="checkbox" id="decode-checkbox" class="slide-checkbox"/>
+					<label for="decode-checkbox" class="slide-label"></label>
+				</div>
+				<div class="metar float">
+					<pre id="flight-plan-metars"></pre>
+					<button id="refresh-metars">Refresh</button>
+				</div>
+				<div class="metar float">
+					<input id="search-metar-icao" placeholder="KLAX" spellcheck="false"/>
+					<button id="search-metar-button">Search</button>
+					<pre id="search-metar"></pre>
+				</div>
+			</section>
+
+			<br/>
+
+			<section>
+				<div id="map-flex-header">
+					<h1>Route Map</h1>
+					<button id="map-theme">Change Theme</button>
+				</div>
+				<div id="map"></div>
+			</section>
+
+			<br/>
+
+			<section>
+				<h1 id="transmitter-header">Transmitter Flight Tracking</h1>
+				<a id="transmitter-setup" href="https://www.virtualflight.online/operations/transmitter" target="_blank">(https://www.virtualflight.online/operations/transmitter)</a>
+
+				<div id="transmitter-settings" class="float">
+					<h1>Server</h1>
+					<span id="transmitter-server-url-label">URL:</span><input id="transmitter-server" placeholder="Transmitter Server" value="https://transmitter.virtualflight.online"/>
+					<span id="transmitter-endpoint">/status_json.php</span>
+					<br/>
+					<button id="save-transmitter-server">Save</button>
+					<button id="reset-transmitter-server">Reset</button>
+
+					<h1>Callsign</h1>
+					<input id="transmitter-callsign" placeholder="Callsign"/>
+					<button id="transmitter-start-tracking">Start Tracking</button>
+					<button id="transmitter-stop-tracking">Stop Tracking</button>
+				</div>
+
+				<div id="transmitter-data" class="float">
+					<div class="table-container">
+						<table id="transmitter-data-table">
+							<thead>
+								<tr>
+									<th>Time Online</th>
+									<th>Altitude</th>
+									<th>Heading</th>
+									<th>Airspeed</th>
+									<th>Groundspeed</th>
+									<th>Latitude</th>
+									<th>Longitude</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>-</td>
+									<td>-</td>
+									<td>-</td>
+									<td>-</td>
+									<td>-</td>
+									<td>-</td>
+									<td>-</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+
+		</div>
+
+		<div id="scratchpad">
+			<div id="scratchpad-options">
+				<div id="file-options-wrapper">
+					<div id="hamburger-menu" class="option-button">
+						<img src="images/hamburger.png" class="option-icon" alt="three horizontal lines"/>
+					</div>
+					<div id="option-buttons">
+						<div id="new-scratchpad-button" class="option-button">
+							<img src="images/new-scratchpad.png" class="option-icon" alt="plus"/>
+							<h1>New</h1>
+						</div>
+						<div id="open-scratchpad-button" class="option-button">
+							<img src="images/open-file.png" class="option-icon" alt="folder"/>
+							<h1>Open</h1>
+						</div>
+						<div id="save-scratchpad-button" class="option-button">
+							<img src="images/save-file.png" class="option-icon" alt="floppy disk"/>
+							<h1>Save</h1>
+						</div>
+						<div id="delete-scratchpad-button" class="option-button">
+							<img src="images/delete.png" class="option-icon" alt="trash can"/>
+							<h1>Delete</h1>
+						</div>
+					</div>
+				</div>
+				<pre id="save-status"></pre>
+				<div>
+					<div id="dot-menu" class="option-button">
+						<img src="images/dot-menu.png" class="option-icon" alt="three vertical dots"/>
+					</div>
+					<div id="editing-buttons">
+						<div id="clear-button" class="option-button">
+							<img src="images/eraser.png" class="option-icon" alt="eraser"/>
+							<h1>Clear</h1>
+						</div>
+						<div id="undo-button" class="option-button">
+							<img src="images/undo.png" class="option-icon" alt="undo icon"/>
+							<h1>Undo</h1>
+						</div>
+						<div id="redo-button" class="option-button">
+							<img src="images/redo.png" class="option-icon" alt="redo icon"/>
+							<h1>Redo</h1>
+						</div>
+					</div>
+				</div>
 			</div>
-		</section>
+			<dialog id="scratchpad-templates">
+				<h1>Templates</h1>
+				<div>
+					<div class="scratchpad-template" data-value="draw">
+						<img src="images/scratchpad.png" class="option-icon" alt="pencil"/>
+						<h1>Draw</h1>
+					</div>
+					<div class="scratchpad-template" data-value="type">
+						<img src="images/text-cursor.png" class="option-icon" alt="text cursor"/>
+						<h1>Type</h1>
+					</div>
+					<div class="scratchpad-template" data-value="atis">
+						<img src="images/cloud.png" class="option-icon" alt="cloud"/>
+						<h1>ATIS</h1>
+					</div>
+					<div class="scratchpad-template" data-value="craft">
+						<img src="images/route.png" class="option-icon" alt="path from a to b"/>
+						<h1>CRAFT</h1>
+					</div>
+				</div>
+				<button id="cancel-new-scratchpad" autofocus>Cancel</button>
+			</dialog>
+			<dialog id="saved-scratchpads">
+				<h1>Saved ScratchPads</h1>
+				<div id="saved-scratchpads-container"></div>
+				<button id="cancel-open-scratchpad" autofocus>Cancel</button>
+			</dialog>
 
-		<br/>
+			<canvas id="canvas"></canvas>
+			<textarea id="type-template" spellcheck="false"></textarea>
+			<div id="craft-template">
+				<button id="craft-input-toggle" class="input-toggle" data-value="draw">
+					<img src="images/scratchpad.png" class="option-icon" alt="change input type"/>
+				</button>
 
-		<section>
-			<h1>Flight Information</h1>
-			<pre id="flight-info"></pre>
-		</section>
-
-		<br/>
-
-		<section>
-			<div id="ofp-flex-header">
-				<h1>OFP</h1>
-				<button id="ofp-fullscreen">Fullscreen</button>
+				<div class="craft-letter">C</div>
+				<div class="craft-input" spellcheck="false" contenteditable="true"><br/></div>
+				<div class="craft-letter">R</div>
+				<div class="craft-input" spellcheck="false" contenteditable="true"><br/></div>
+				<div class="craft-letter">A</div>
+				<div class="craft-input" spellcheck="false" contenteditable="true"><br/></div>
+				<div class="craft-letter">F</div>
+				<div class="craft-input" spellcheck="false" contenteditable="true"><br/></div>
+				<div class="craft-letter">T</div>
+				<div class="craft-input" spellcheck="false" contenteditable="true"><br/></div>
 			</div>
-			<div id="ofp"></div>
-		</section>
+			<div id="atis-template">
+				<button id="atis-input-toggle" class="input-toggle" data-value="draw">
+					<img src="images/scratchpad.png" class="option-icon" alt="change input type"/>
+				</button>
 
-		<br/>
-
-		<section>
-			<h1>Live METAR (VATSIM)</h1>
-			<div id="decode">
-				<label for="decode-checkbox">Decode</label>
-				<input type="checkbox" id="decode-checkbox" class="slide-checkbox"/>
-				<label for="decode-checkbox" class="slide-label"></label>
+				<div id="atis-row-1" class="atis-row">
+					<div class="atis-field">
+						<h1>Airport</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Designator</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Time</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+				</div>
+				<div id="atis-row-2" class="atis-row">
+					<div class="atis-field">
+						<h1>Wind</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Gusting</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Varying</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+				</div>
+				<div id="atis-row-3" class="atis-row">
+					<div class="atis-field">
+						<h1>Visibility</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Temp</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Dewpoint</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Altimeter</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+				</div>
+				<div id="atis-row-4" class="atis-row">
+					<div class="atis-field">
+						<h1>Runways</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div class="atis-field">
+						<h1>Weather</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+					<div id="atis-rmks" class="atis-field">
+						<h1>Remarks/Notes</h1>
+						<div class="atis-input-scroll">
+							<div class="atis-input" spellcheck="false" contenteditable="true"></div>
+						</div>
+					</div>
+				</div>
 			</div>
-			<pre id="metars"></pre>
-			<button id="refresh-metars">Refresh</button>
-		</section>
+		</div>
 
-		<br/>
-
-		<section>
-			<div id="map-flex-header">
-				<h1>Route Map</h1>
-				<button id="map-theme">Change Theme</button>
+		<footer id="pages-menu">
+			<div id="briefing-button" class="page-button">
+				<img src="images/briefing.png" class="page-icon" alt="paper with folded corner"/>
+				<h1>Briefing</h1>
 			</div>
-			<div id="map"></div>
-		</section>
+			<div id="scratchpad-button" class="page-button">
+				<img src="images/scratchpad.png" class="page-icon" alt="pencil"/>
+				<h1>ScratchPad</h1>
+			</div>
+		</footer>
 
+		<script src="transmitter.js"></script>
 		<script src="map.js"></script>
 		<script src="metar.js"></script>
+		<script src="scratchpad.js"></script>
 		<script src="main.js"></script>
 	</body>
 </html>

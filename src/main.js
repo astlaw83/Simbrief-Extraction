@@ -1,11 +1,12 @@
+const simbriefID = document.getElementById("simbrief-ID");
+const ofp = document.getElementById("ofp-container");
+const decode = document.getElementById("decode-checkbox");
+const briefingPage = document.getElementById("briefing");
+const scratchpadPage = document.getElementById("scratchpad");
+
 let flightPlan;
 let loaded = false;
 let requested = false;
-const simbriefID = document.getElementById("simbrief-ID");
-const flightInfo = document.getElementById("flight-info");
-const ofp = document.getElementById("ofp");
-const decode = document.getElementById("decode-checkbox");
-const metar = document.getElementById("metars");
 
 // check if an id has been saved
 let savedID = localStorage.getItem("userID");
@@ -18,11 +19,24 @@ async function fetchFlightPlan() {
 	if (requested) return;
 	requested = true;
 
+	// stop transmitter
+	stopTracking();
+	clearTransmitter();
+
 	// get the inputted ID
 	let userID = simbriefID.value;
 	let url = `https://www.simbrief.com/api/xml.fetcher.php?userid=${userID}&json=1`;
 
-	let response = await fetch(url); // wait for the request to complete
+	let response;
+	try {
+		response = await fetch(url); // wait for the request to complete
+	} catch (err) {
+		console.error(err);
+		alert(`Failed to fetch flight plan. Check your internet connection`);
+		return;
+	}
+
+
 	flightPlan = await response.json(); // parse JSON data
 
 	if (!response.ok) {
@@ -45,8 +59,21 @@ async function fetchFlightPlan() {
 
 	// enable button to refresh the metars
 	document.getElementById("refresh-metars").addEventListener("click", refreshMetars);
-	// enable decode toggle
-	decode.addEventListener("click", displayMetars);
+
+	// update decode function to include the flight plan metars
+	decodeFunction = () => {
+		displayMetars();
+		displaySearchMetar();
+	};
+
+	// ofp buttons
+	document.getElementById("ofp-text-increase").addEventListener("click", () => incrementOfpFontSize(1));
+	document.getElementById("ofp-text-decrease").addEventListener("click", () => incrementOfpFontSize(-1));
+	document.addEventListener("keydown", e => {
+		if (e.key == "=" && e.altKey) incrementOfpFontSize(1, "increase");
+		if (e.key == "-" && e.altKey) incrementOfpFontSize(-1, "decrease");
+	});
+
 
 	// allow more requests
 	requested = false;
@@ -54,61 +81,81 @@ async function fetchFlightPlan() {
 
 function populateFlightData() {
 	let data = {
-		Callsign: flightPlan.atc.callsign,
-		Departure: `${flightPlan.origin.icao_code}/${flightPlan.origin.plan_rwy}`,
-		Destination: `${flightPlan.destination.icao_code}/${flightPlan.destination.plan_rwy}`,
-		"Initial Altitude": flightPlan.general.initial_altitude + "ft",
-		Distance: flightPlan.general.route_distance + "nm",
-		"Block Time": secondsToHours(flightPlan.times.est_block),
-		Route: flightPlan.general.route,
+		"<strong>Callsign</strong>": flightPlan.atc.callsign,
+		"<strong>Departure</strong>": `${flightPlan.origin.icao_code}/${flightPlan.origin.plan_rwy}`,
+		"<strong>Destination</strong>": `${flightPlan.destination.icao_code}/${flightPlan.destination.plan_rwy}`,
+		"<strong>Initial Altitude</strong>": flightPlan.general.initial_altitude + "ft",
+		"<strong>Distance</strong>": flightPlan.general.route_distance + "NM",
+		"<strong>Block Time</strong>": secondsToHours(flightPlan.times.est_block),
+		"<strong>Route</strong>": flightPlan.general.route,
 	};
 
-	// put all the important data into a string
+	// put all the data into a string
 	let info = "";
 	for (let item in data) {
 		info += `${item}: ${data[item]}\n`;
 	}
 
 	// add the data to the textarea
-	flightInfo.textContent = info;
+	document.getElementById("flight-info").innerHTML = info;
 
 	// fetch and display the ofp
 	ofp.innerHTML = flightPlan.text.plan_html;
-	// style the ofp text
-	ofp.children[0].children[0].classList.add("ofp");
+	// give text an id
+	ofp.children[0].children[0].id = "ofp-text";
+
+	// change styles
+	ofp.children[0].style.lineHeight = 1.1;
 
 	// fill in the metar
-	refreshMetars();
+	initMetars();
 }
 
 function decodeWaypoints() {
-	// each waypoint is stored as an object with {ident, name, lat, long, via_airway, info}
+	// each waypoint is stored as an object with {ident, name, lat, long, via_airway, distance, track_true, track_mag, info}
 	let waypoints = [];
 
 	// start with the departure airport
 	const origin = flightPlan.origin;
 	let ident = origin.icao_code;
 	let name = origin.name;
-	let lat = origin.pos_lat;
-	let long = origin.pos_long;
+	let lat = Number(origin.pos_lat);
+	let long = Number(origin.pos_long);
+
+	// all are to the next waypoint
 	let via_airway = flightPlan.navlog.fix[0].via_airway;
+	let distance = flightPlan.navlog.fix[0].distance;
+	let track_true = flightPlan.navlog.fix[0].track_true;
+	let track_mag = flightPlan.navlog.fix[0].track_mag;
+
+	let info = "";
 
 	// add the data as an object to the array
-	let waypoint = {ident, name, lat, long, via_airway};
+	let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 	waypoints.push(waypoint);
 
 	let i = 1;
 	for (let fix of flightPlan.navlog.fix) {
 		let ident = fix.ident;
 		let name = fix.name;
-		let lat = fix.pos_lat;
-		let long = fix.pos_long;
-		let via_airway = "0";
-		if (i < flightPlan.navlog.fix.length) via_airway = flightPlan.navlog.fix[i].via_airway;
-		let info;
+		let lat = Number(fix.pos_lat);
+		let long = Number(fix.pos_long);
+
+		let via_airway = "";
+		let distance = "";
+		let track_true = "";
+		let track_mag = "";
+		if (i < flightPlan.navlog.fix.length) {
+			via_airway = flightPlan.navlog.fix[i].via_airway;
+			distance = flightPlan.navlog.fix[i].distance;
+			track_true = flightPlan.navlog.fix[i].track_true;
+			track_mag = flightPlan.navlog.fix[i].track_mag;
+		}
+
+		let info = "";
 		if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
-		let waypoint = {ident, name, lat, long, via_airway, info};
+		let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 		waypoints.push(waypoint);
 		i++;
 	}
@@ -139,25 +186,43 @@ function decodeAlternates() {
 			const destination = flightPlan.destination;
 			let ident = destination.icao_code;
 			let name = destination.name;
-			let lat = destination.pos_lat;
-			let long = destination.pos_long;
-			let via_airway = altNavlog.fix[0].via_airway;
+			let lat = Number(destination.pos_lat);
+			let long = Number(destination.pos_long);
 
-			let waypoint = {ident, name, lat, long, via_airway};
+			// all are to the next waypoint
+			let via_airway = altNavlog.fix[0].via_airway;
+			let distance = altNavlog.fix[0].distance;
+			let track_true = altNavlog.fix[0].track_true;
+			let track_mag = altNavlog.fix[0].track_mag;
+
+			let info = "";
+
+			// add the data as an object to the array
+			let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 			waypoints.push(waypoint);
 
 			let i = 1;
 			for (let fix of altNavlog.fix) {
 				let ident = fix.ident;
 				let name = fix.name;
-				let lat = fix.pos_lat;
-				let long = fix.pos_long;
-				let via_airway = "0";
-				if (i < altNavlog.fix.length) via_airway = altNavlog.fix[i].via_airway;
-				let info;
+				let lat = Number(fix.pos_lat);
+				let long = Number(fix.pos_long);
+
+				let via_airway = "";
+				let distance = "";
+				let track_true = "";
+				let track_mag = "";
+				if (i < flightPlan.navlog.fix.length) {
+					via_airway = altNavlog.fix[i].via_airway;
+					distance = altNavlog.fix[i].distance;
+					track_true = altNavlog.fix[i].track_true;
+					track_mag = altNavlog.fix[i].track_mag;
+				}
+
+				let info = "";
 				if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
-				let waypoint = {ident, name, lat, long, via_airway, info};
+				let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 				waypoints.push(waypoint);
 				i++;
 			}
@@ -170,26 +235,43 @@ function decodeAlternates() {
 		const destination = flightPlan.destination;
 		let ident = destination.icao_code;
 		let name = destination.name;
-		let lat = destination.pos_lat;
-		let long = destination.pos_long;
-		let via_airway = flightPlan.alternate_navlog.fix[0].via_airway;
+		let lat = Number(destination.pos_lat);
+		let long = Number(destination.pos_long);
 
-		let waypoint = {ident, name, lat, long, via_airway};
+		// all are to the next waypoint
+		let via_airway = flightPlan.alternate_navlog.fix[0].via_airway;
+		let distance = flightPlan.alternate_navlog.fix[0].distance;
+		let track_true = flightPlan.alternate_navlog.fix[0].track_true;
+		let track_mag = flightPlan.alternate_navlog.fix[0].track_mag;
+
+		let info = "";
+
+		// add the data as an object to the array
+		let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 		waypoints.push(waypoint);
 
 		let i = 1;
 		for (let fix of flightPlan.alternate_navlog.fix) {
-
 			let ident = fix.ident;
 			let name = fix.name;
-			let lat = fix.pos_lat;
-			let long = fix.pos_long;
-			let via_airway = "0";
-			if (i < flightPlan.alternate_navlog.fix.length) via_airway = flightPlan.alternate_navlog.fix[i].via_airway;
-			let info;
+			let lat = Number(fix.pos_lat);
+			let long = Number(fix.pos_long);
+
+			let via_airway = "";
+			let distance = "";
+			let track_true = "";
+			let track_mag = "";
+			if (i < flightPlan.alternate_navlog.fix.length) {
+				via_airway = flightPlan.alternate_navlog.fix[i].via_airway;
+				distance = flightPlan.alternate_navlog.fix[i].distance;
+				track_true = flightPlan.alternate_navlog.fix[i].track_true;
+				track_mag = flightPlan.alternate_navlog.fix[i].track_mag;
+			}
+
+			let info = "";
 			if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
-			let waypoint = {ident, name, lat, long, via_airway, info};
+			let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 			waypoints.push(waypoint);
 			i++;
 		}
@@ -200,25 +282,19 @@ function decodeAlternates() {
 	return altRoutes;
 }
 
-function saveID() {
-	// get the inputted ID
-	let userID = simbriefID.value;
-
-	// put the id in localStorage
-	localStorage.setItem("userID", userID);
-}
-
 function getTimestamp(offsetHours) {
 	let utc = Date.now();
 	return utc + (offsetHours * 3600000);
 }
 
 updateClocks();
+
 function updateClocks() {
 	// get the utc time
-	let hours = String(new Date().getUTCHours()).padStart(2, "0");
-	let minutes = String(new Date().getUTCMinutes()).padStart(2, "0");
-	let seconds = String(new Date().getUTCSeconds()).padStart(2, "0");
+	let now = new Date();
+	let hours = String(now.getUTCHours()).padStart(2, "0");
+	let minutes = String(now.getUTCMinutes()).padStart(2, "0");
+	let seconds = String(now.getUTCSeconds()).padStart(2, "0");
 
 	// display the utc time
 	let clock = document.getElementById("c1");
@@ -240,6 +316,7 @@ function updateClocks() {
 
 		// display the time
 		clock = document.getElementById("c2");
+		clock.style.display = "inline-block";
 		clock.textContent = `${flightPlan.origin.icao_code}\n${hours}:${minutes}:${seconds} (${timezone})`;
 
 
@@ -259,10 +336,11 @@ function updateClocks() {
 
 		// display the time
 		clock = document.getElementById("c3");
+		clock.style.display = "inline-block";
 		clock.textContent = `${flightPlan.destination.icao_code}\n${hours}:${minutes}:${seconds} (${timezone})`;
 	}
 
-	requestAnimationFrame(updateClocks);
+	setTimeout(updateClocks, 1000);
 }
 
 function secondsToHours(seconds) {
@@ -271,6 +349,49 @@ function secondsToHours(seconds) {
 	return `${hours}:${String(minutes - hours * 60).padStart(2, "0")}`;
 }
 
-document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
-document.getElementById("save-ID").addEventListener("click", saveID);
+function incrementOfpFontSize(increment) {
+	// get element
+	const element = document.getElementById("ofp-text");
+
+	// get current size as a number e.g. "16px" => 16
+	const currentSize = Number(getComputedStyle(element).fontSize.replace("px", ""));
+
+	// return if min size (6px font size)
+	if (currentSize == 6 && Math.sign(increment) == -1) return;
+
+	// add increment
+	const newSize = currentSize + increment;
+
+	// update element
+	element.style.fontSize = newSize + "px";
+
+	// image size
+	document.querySelectorAll("#ofp a img").forEach(img => {
+		const styles = getComputedStyle(img);
+		let currentWidth = Number(styles.width.replace("px", ""));
+		img.style.width = currentWidth + increment * 50 + "px";
+	});
+
+}
+
+// submit on enter key
+simbriefID.addEventListener("keydown", e => {
+	if (e.key == "Enter") {
+		document.getElementById("fetch-plan").click();
+		simbriefID.blur();
+	}
+});
+
+// focusing input field selects all text and all inputs are uppercase
+document.querySelectorAll("input").forEach(e => e.addEventListener("focus", () => e.select()));
+
+document.getElementById("save-ID").addEventListener("click", () => localStorage.setItem("userID", simbriefID.value));
 document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan);
+
+document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
+
+// switching between pages
+document.getElementById("briefing-button").addEventListener("click", () => {
+	briefingPage.style.display = "block";
+	scratchpadPage.style.display = "none";
+});
