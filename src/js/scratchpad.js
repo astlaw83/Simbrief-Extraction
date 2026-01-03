@@ -1,3 +1,4 @@
+const scratchpadPage = document.getElementById("scratchpad");
 const canvas = document.getElementById("canvas");
 const scratchpad = new SignaturePad(canvas, {
 	penColor: "#fff"
@@ -111,7 +112,8 @@ function populateSavedScratchpads() {
 
 		// delete img
 		const deleteImg = document.createElement("img");
-		deleteImg.src = "images/delete.png";
+		deleteImg.src = "images/trash-can.png";
+		deleteImg.alt = "delete";
 
 		// event listener to delete scratchpad
 		deleteImg.addEventListener("click", e => {
@@ -146,6 +148,88 @@ function populateSavedScratchpads() {
 
 		// add it to the list of options
 		options.appendChild(option);
+	}
+}
+
+function setTemplate(template, populate = false, data = {}) {
+	switch (template) {
+		case "draw":
+			// only show canvas
+			canvas.style.display = "inline";
+			canvas.style.pointerEvents = "auto";
+			resize();
+			typeTemplate.style.display = "none";
+			craftTemplate.style.display = "none";
+			atisTemplate.style.display = "none";
+
+			currentTemplate = "draw";
+
+			canvas.focus();
+			break;
+		case "type":
+			// only show textarea
+			canvas.style.display = "none";
+			typeTemplate.style.display = "inline-block";
+			craftTemplate.style.display = "none";
+			atisTemplate.style.display = "none";
+
+			currentTemplate = "type";
+
+			// cleaar and focus the textarea
+			typeTemplate.value = "";
+			typeTemplate.focus();
+			break;
+		case "atis":
+			// only show atis template and canvas
+			canvas.style.display = "inline";
+			canvas.style.pointerEvents = "auto";
+			resize();
+			typeTemplate.style.display = "none";
+			craftTemplate.style.display = "none";
+			atisTemplate.style.display = "grid";
+
+			// reset input mode
+			document.querySelector("#atis-input-toggle img").src = "images/pencil.png";
+			atisInputToggle.dataset.value = "draw";
+
+			currentTemplate = "atis";
+
+			break;
+		case "craft":
+			// only show craft template and canvas
+			canvas.style.display = "inline";
+			canvas.style.pointerEvents = "auto";
+			resize();
+			typeTemplate.style.display = "none";
+			craftTemplate.style.display = "grid";
+			atisTemplate.style.display = "none";
+
+			// reset input mode
+			document.querySelector("#craft-input-toggle img").src = "images/pencil.png";
+			craftInputToggle.dataset.value = "draw";
+
+			currentTemplate = "craft";
+
+			break;
+	}
+
+	if (!populate) return;
+
+	switch (template) {
+		case "draw":
+			scratchpad.fromData(data.data);
+			break;
+		case "type":
+			typeTemplate.value = data.text;
+			break;
+		case "atis":
+			scratchpad.fromData(data.data);
+			document.querySelectorAll(".atis-input").forEach((e, index) => e.textContent = data.text[index]);
+			break;
+		case "craft":
+			scratchpad.fromData(data.data);
+			document.querySelectorAll(".craft-input").forEach((e, index) => e.textContent = data.text[index]);
+			break;
 	}
 }
 
@@ -320,7 +404,7 @@ craftInputToggle.addEventListener("click", () => {
 		canvas.focus();
 
 		// update icon
-		document.querySelector("#craft-input-toggle img").src = "images/scratchpad.png";
+		document.querySelector("#craft-input-toggle img").src = "images/pencil.png";
 	}
 
 });
@@ -347,7 +431,7 @@ atisInputToggle.addEventListener("click", () => {
 		canvas.focus();
 
 		// update icon
-		document.querySelector("#atis-input-toggle img").src = "images/scratchpad.png";
+		document.querySelector("#atis-input-toggle img").src = "images/pencil.png";
 	}
 
 });
@@ -409,9 +493,6 @@ atisInputs.forEach((e, index) => e.addEventListener("keydown", event => {
 	}
 }));
 
-// redraw on resize
-window.addEventListener("resize", resize);
-
 function resize() {
 	// set canvas drawing buffer
 	canvas.width = canvas.clientWidth;
@@ -421,92 +502,11 @@ function resize() {
 	scratchpad.redraw();
 }
 
+// redraw on resize
+window.addEventListener("resize", resize);
+
 // switch pages
 document.getElementById("scratchpad-button").addEventListener("click", () => {
-	briefingPage.style.display = "none";
-	scratchpadPage.style.display = "block";
-
+	changeTab("scratchpad");
 	resize();
 });
-
-function setTemplate(template, populate = false, data = {}) {
-	switch (template) {
-		case "draw":
-			// only show canvas
-			canvas.style.display = "inline";
-			canvas.style.pointerEvents = "auto";
-			resize();
-			typeTemplate.style.display = "none";
-			craftTemplate.style.display = "none";
-			atisTemplate.style.display = "none";
-
-			currentTemplate = "draw";
-
-			canvas.focus();
-			break;
-		case "type":
-			// only show textarea
-			canvas.style.display = "none";
-			typeTemplate.style.display = "inline-block";
-			craftTemplate.style.display = "none";
-			atisTemplate.style.display = "none";
-
-			currentTemplate = "type";
-
-			// cleaar and focus the textarea
-			typeTemplate.value = "";
-			typeTemplate.focus();
-			break;
-		case "atis":
-			// only show atis template and canvas
-			canvas.style.display = "inline";
-			canvas.style.pointerEvents = "auto";
-			resize();
-			typeTemplate.style.display = "none";
-			craftTemplate.style.display = "none";
-			atisTemplate.style.display = "grid";
-
-			// reset input mode
-			document.querySelector("#atis-input-toggle img").src = "images/scratchpad.png";
-			atisInputToggle.dataset.value = "draw";
-
-			currentTemplate = "atis";
-
-			break;
-		case "craft":
-			// only show craft template and canvas
-			canvas.style.display = "inline";
-			canvas.style.pointerEvents = "auto";
-			resize();
-			typeTemplate.style.display = "none";
-			craftTemplate.style.display = "grid";
-			atisTemplate.style.display = "none";
-
-			// reset input mode
-			document.querySelector("#craft-input-toggle img").src = "images/scratchpad.png";
-			craftInputToggle.dataset.value = "draw";
-
-			currentTemplate = "craft";
-
-			break;
-	}
-
-	if (!populate) return;
-
-	switch (template) {
-		case "draw":
-			scratchpad.fromData(data.data);
-			break;
-		case "type":
-			typeTemplate.value = data.text;
-			break;
-		case "atis":
-			scratchpad.fromData(data.data);
-			document.querySelectorAll(".atis-input").forEach((e, index) => e.textContent = data.text[index]);
-			break;
-		case "craft":
-			scratchpad.fromData(data.data);
-			document.querySelectorAll(".craft-input").forEach((e, index) => e.textContent = data.text[index]);
-			break;
-	}
-}
