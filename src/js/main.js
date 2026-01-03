@@ -173,6 +173,8 @@ function decodeAlternates() {
 	// loop through if more than one alternate
 	if (alternateCount > 1) {
 		for (let altNavlog of flightPlan.alternate_navlog) {
+			if (!altNavlog.fix) return [];
+
 			let waypoints = [];
 
 			// add the destination airport (that is where the alternate route starts from)
@@ -219,7 +221,9 @@ function decodeAlternates() {
 			}
 			altRoutes.push(waypoints);
 		}
-	} else {
+	} else if (alternateCount == 1) {
+		if (!flightPlan.alternate_navlog.fix) return [];
+
 		let waypoints = [];
 
 		// add the destination airport (that is where the alternate route starts from)
