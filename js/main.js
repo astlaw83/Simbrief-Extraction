@@ -2,7 +2,6 @@ const simbriefID = document.getElementById("simbrief-ID");
 const ofp = document.getElementById("ofp-container");
 const decode = document.getElementById("decode-checkbox");
 const briefingPage = document.getElementById("briefing");
-const scratchpadPage = document.getElementById("scratchpad");
 
 let flightPlan;
 let loaded = false;
@@ -14,7 +13,7 @@ if (savedID) simbriefID.value = savedID;
 
 // check for service worker
 if ("serviceWorker" in navigator) {
-	navigator.serviceWorker.register("pwa/service-worker.js")
+	navigator.serviceWorker.register("../pwa/service-worker.js")
 		.then(() => console.log("Service Worker registered"))
 		.catch(console.error);
 }
@@ -26,23 +25,19 @@ async function fetchFlightPlan() {
 	if (requested) return;
 	requested = true;
 
-	// stop transmitter
-	stopTracking();
-	clearTransmitter();
-
 	// get the inputted ID
-	let userID = simbriefID.value;
-	let url = `https://www.simbrief.com/api/xml.fetcher.php?userid=${userID}&json=1`;
+	const userID = simbriefID.value;
+	const url = `https://www.simbrief.com/api/xml.fetcher.php?userid=${userID}&json=1`;
 
 	let response;
 	try {
 		response = await fetch(url); // wait for the request to complete
 	} catch (err) {
 		console.error(err);
-		alert(`Failed to fetch flight plan. Check your internet connection`);
+		requested = false;
+		alert("Failed to fetch flight plan. Check your internet connection");
 		return;
 	}
-
 
 	flightPlan = await response.json(); // parse JSON data
 
@@ -115,7 +110,7 @@ function populateFlightData() {
 	ofp.children[0].style.lineHeight = 1.1;
 
 	// fill in the metar
-	initMetars();
+	// initMetars();
 }
 
 function decodeWaypoints() {
@@ -141,8 +136,9 @@ function decodeWaypoints() {
 	let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 	waypoints.push(waypoint);
 
-	let i = 1;
-	for (let fix of flightPlan.navlog.fix) {
+	for (let i = 0; i < flightPlan.navlog.fix.length; i++) {
+		let fix = flightPlan.navlog.fix[i];
+
 		let ident = fix.ident;
 		let name = fix.name;
 		let lat = Number(fix.pos_lat);
@@ -152,19 +148,16 @@ function decodeWaypoints() {
 		let distance = "";
 		let track_true = "";
 		let track_mag = "";
-		if (i < flightPlan.navlog.fix.length) {
-			via_airway = flightPlan.navlog.fix[i].via_airway;
-			distance = flightPlan.navlog.fix[i].distance;
-			track_true = flightPlan.navlog.fix[i].track_true;
-			track_mag = flightPlan.navlog.fix[i].track_mag;
-		}
+		via_airway = flightPlan.navlog.fix[i + 1]?.via_airway;
+		distance = flightPlan.navlog.fix[i + 1]?.distance;
+		track_true = flightPlan.navlog.fix[i + 1]?.track_true;
+		track_mag = flightPlan.navlog.fix[i + 1]?.track_mag;
 
 		let info = "";
 		if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
 		let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 		waypoints.push(waypoint);
-		i++;
 	}
 
 	return waypoints;
@@ -187,6 +180,8 @@ function decodeAlternates() {
 	// loop through if more than one alternate
 	if (alternateCount > 1) {
 		for (let altNavlog of flightPlan.alternate_navlog) {
+			if (!altNavlog.fix) return [];
+
 			let waypoints = [];
 
 			// add the destination airport (that is where the alternate route starts from)
@@ -208,8 +203,9 @@ function decodeAlternates() {
 			let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 			waypoints.push(waypoint);
 
-			let i = 1;
-			for (let fix of altNavlog.fix) {
+			for (let i = 0; i < altNavlog.fix.length; i++) {
+				let fix = altNavlog.fix[i];
+
 				let ident = fix.ident;
 				let name = fix.name;
 				let lat = Number(fix.pos_lat);
@@ -219,68 +215,65 @@ function decodeAlternates() {
 				let distance = "";
 				let track_true = "";
 				let track_mag = "";
-				if (i < flightPlan.navlog.fix.length) {
-					via_airway = altNavlog.fix[i].via_airway;
-					distance = altNavlog.fix[i].distance;
-					track_true = altNavlog.fix[i].track_true;
-					track_mag = altNavlog.fix[i].track_mag;
-				}
+				via_airway = altNavlog.fix[i + 1]?.via_airway;
+				distance = altNavlog.fix[i + 1]?.distance;
+				track_true = altNavlog.fix[i + 1]?.track_true;
+				track_mag = altNavlog.fix[i + 1]?.track_mag;
 
 				let info = "";
 				if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
 				let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 				waypoints.push(waypoint);
-				i++;
 			}
 			altRoutes.push(waypoints);
 		}
-	} else {
+	} else if (alternateCount == 1) {
+		if (!flightPlan.alternate_navlog.fix) return [];
+
 		let waypoints = [];
 
 		// add the destination airport (that is where the alternate route starts from)
 		const destination = flightPlan.destination;
-		let ident = destination.icao_code;
-		let name = destination.name;
-		let lat = Number(destination.pos_lat);
-		let long = Number(destination.pos_long);
+		const ident = destination.icao_code;
+		const name = destination.name;
+		const lat = Number(destination.pos_lat);
+		const long = Number(destination.pos_long);
 
 		// all are to the next waypoint
-		let via_airway = flightPlan.alternate_navlog.fix[0].via_airway;
-		let distance = flightPlan.alternate_navlog.fix[0].distance;
-		let track_true = flightPlan.alternate_navlog.fix[0].track_true;
-		let track_mag = flightPlan.alternate_navlog.fix[0].track_mag;
+		const via_airway = flightPlan.alternate_navlog.fix[0].via_airway;
+		const distance = flightPlan.alternate_navlog.fix[0].distance;
+		const track_true = flightPlan.alternate_navlog.fix[0].track_true;
+		const track_mag = flightPlan.alternate_navlog.fix[0].track_mag;
 
-		let info = "";
+		const info = "";
 
 		// add the data as an object to the array
 		let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 		waypoints.push(waypoint);
 
-		let i = 1;
-		for (let fix of flightPlan.alternate_navlog.fix) {
-			let ident = fix.ident;
-			let name = fix.name;
-			let lat = Number(fix.pos_lat);
-			let long = Number(fix.pos_long);
+		for (let i = 0; i < flightPlan.alternate_navlog.fix.length; i++) {
+			const fix = flightPlan.alternate_navlog.fix[i];
+
+			const ident = fix.ident;
+			const name = fix.name;
+			const lat = Number(fix.pos_lat);
+			const long = Number(fix.pos_long);
 
 			let via_airway = "";
 			let distance = "";
 			let track_true = "";
 			let track_mag = "";
-			if (i < flightPlan.alternate_navlog.fix.length) {
-				via_airway = flightPlan.alternate_navlog.fix[i].via_airway;
-				distance = flightPlan.alternate_navlog.fix[i].distance;
-				track_true = flightPlan.alternate_navlog.fix[i].track_true;
-				track_mag = flightPlan.alternate_navlog.fix[i].track_mag;
-			}
+			via_airway = flightPlan.alternate_navlog.fix[i + 1]?.via_airway;
+			distance = flightPlan.alternate_navlog.fix[i + 1]?.distance;
+			track_true = flightPlan.alternate_navlog.fix[i + 1]?.track_true;
+			track_mag = flightPlan.alternate_navlog.fix[i + 1]?.track_mag;
 
 			let info = "";
 			if (fix.type != "wpt" && fix.type != "ltlg" && fix.type != "apt") info = `${fix.type.toUpperCase()} ${fix.frequency}`;
 
 			let waypoint = {ident, name, lat, long, via_airway, distance, track_true, track_mag, info};
 			waypoints.push(waypoint);
-			i++;
 		}
 
 		altRoutes.push(waypoints);
@@ -373,12 +366,33 @@ function incrementOfpFontSize(increment) {
 	element.style.fontSize = newSize + "px";
 
 	// image size
-	document.querySelectorAll("#ofp a img").forEach(img => {
+	document.querySelectorAll("#ofp-text a img").forEach(img => {
 		const styles = getComputedStyle(img);
 		let currentWidth = Number(styles.width.replace("px", ""));
 		img.style.width = currentWidth + increment * 50 + "px";
 	});
+}
 
+function changeTab(tab) {
+	switch (tab) {
+		case "map":
+			mapPage.classList.remove("hidden");
+			briefingPage.style.display = "none";
+			scratchpadPage.style.display = "none";
+			break;
+
+		case "briefing":
+			mapPage.classList.add("hidden");
+			briefingPage.style.display = "block";
+			scratchpadPage.style.display = "none";
+			break;
+
+		case "scratchpad":
+			mapPage.classList.add("hidden");
+			briefingPage.style.display = "none";
+			scratchpadPage.style.display = "block";
+			break;
+	}
 }
 
 // submit on enter key
@@ -397,8 +411,4 @@ document.getElementById("fetch-plan").addEventListener("click", fetchFlightPlan)
 
 document.getElementById("ofp-fullscreen").addEventListener("click", () => ofp.requestFullscreen());
 
-// switching between pages
-document.getElementById("briefing-button").addEventListener("click", () => {
-	briefingPage.style.display = "block";
-	scratchpadPage.style.display = "none";
-});
+document.getElementById("briefing-button").addEventListener("click", () => changeTab("briefing"));

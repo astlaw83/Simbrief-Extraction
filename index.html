@@ -17,8 +17,8 @@
 		<link rel="apple-touch-icon" href="pwa/icons/icon-512x512.png"/>
 
 		<!-- leaflet for the map -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+		<link rel="stylesheet" href="packages/leaflet.1.9.4.css"/>
+		<script src="packages/leaflet.1.9.4.js"></script>
 
 		<!-- fullscreen button -->
 		<!-- https://github.com/brunob/leaflet.fullscreen -->
@@ -37,12 +37,115 @@
 		<!-- https://github.com/bbecquet/Leaflet.RotatedMarker -->
 		<script src="packages/leaflet.rotatedMarker.min.js"></script>
 
+		<!-- extension to the Leaflet Scale control that adds nautical miles -->
+		<!-- https://github.com/danielmartling/Leaflet.NauticalScale -->
+		<script src="packages/leaflet.nauticalscale.js"></script>
+
 		<!-- signature pad for the scratchpad -->
 		<!-- https://github.com/szimek/signature_pad -->
 		<script src="packages/signature_pad.umd.min.js"></script>
 	</head>
 
 	<body>
+		<div id="map-page" class="hidden">
+			<div id="map"></div>
+
+			<button id="open-map-settings">Settings</button>
+			<div id="map-settings" class="float">
+				<header id="map-settings-header">
+					<button id="close-map-settings">Close</button>
+					<h1>Settings</h1>
+					<span></span>
+				</header>
+
+				<section>
+					<h1>Map</h1>
+					<div class="map-setting">
+						<label for="map-theme">Theme</label>
+						<input type="checkbox" id="map-theme" class="slider-checkbox"/>
+						<label id="map-theme-slider" for="map-theme" class="slider-label"></label>
+					</div>
+					<div class="map-setting">
+						<label for="map-scale">Scale</label>
+						<input type="checkbox" id="map-scale" class="slider-checkbox"/>
+						<label id="map-scale-slider" for="map-scale" class="slider-label"></label>
+					</div>
+					<div class="map-setting">
+						<span>Map Layer:</span>
+						<select id="map-layer">
+							<option value="osm">OpenStreetMap</option>
+							<option value="osm-b">OSM Black</option>
+							<option value="sat">Satellite</option>
+						</select>
+					</div>
+				</section>
+				<section>
+					<header id="transmitter-header">
+						<h1>Transmitter</h1>
+						<span id="transmitter-status"></span>
+					</header>
+					<a id="transmitter-setup" href="https://www.virtualflight.online/operations/transmitter" target="_blank">https://www.virtualflight.online/operations/transmitter</a>
+					<div class="map-setting">
+						<span id="transmitter-server-url-label">URL:</span>
+						<div id="transmitter-full-url">
+							<input id="transmitter-server" placeholder="Transmitter Server" value="https://transmitter.virtualflight.online"/>
+							<span id="transmitter-endpoint">/status_json.php</span>
+						</div>
+					</div>
+					<div class="map-setting">
+						<button id="reset-transmitter-server">Reset</button>
+						<button id="save-transmitter-server">Save</button>
+					</div>
+					<div id="transmitter-callsign-container" class="map-setting">
+						Callsign:<input id="transmitter-callsign" placeholder="Callsign"/>
+					</div>
+					<div class="map-setting">
+						<button id="transmitter-stop-tracking">Stop Tracking</button>
+						<button id="transmitter-start-tracking">Start Tracking</button>
+					</div>
+					<div id="transmitter-trails-container" class="map-setting">
+						<label for="transmitter-trails">Trails</label>
+						<input type="checkbox" id="transmitter-trails" class="slider-checkbox" checked/>
+						<label id="transmitter-trails-slider" for="transmitter-trails" class="slider-label"></label>
+					</div>
+					<div class="map-setting">
+						<label for="transmitter-data-table-checkbox">Data Table</label>
+						<input type="checkbox" id="transmitter-data-table-checkbox" class="slider-checkbox" checked/>
+						<label id="transmitter-data-table-checkbox-slider" for="transmitter-data-table-checkbox" class="slider-label"></label>
+					</div>
+				</section>
+			</div>
+
+			<div id="transmitter-data" >
+				<div id="transmitter-data-container" class="table-container float">
+					<table id="transmitter-data-table">
+						<thead>
+							<tr>
+								<th>Time Online</th>
+								<th>Altitude</th>
+								<th>Heading</th>
+								<th>Airspeed</th>
+								<th>Groundspeed</th>
+								<th>Latitude</th>
+								<th>Longitude</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
 		<div id="briefing">
 			<section>
 				<h1>Simbrief ID</h1>
@@ -65,7 +168,7 @@
 
 			<br/>
 
-			<section id="flightinformation">
+			<section>
 				<h1>Flight Information</h1>
 				<pre id="flight-info"></pre>
 			</section>
@@ -92,8 +195,8 @@
 				<h1>Live METAR (VATSIM)</h1>
 				<div id="decode">
 					<label for="decode-checkbox">Decode</label>
-					<input type="checkbox" id="decode-checkbox" class="slide-checkbox"/>
-					<label for="decode-checkbox" class="slide-label"></label>
+					<input type="checkbox" id="decode-checkbox" class="slider-checkbox"/>
+					<label id="decode-checkbox-slider" for="decode-checkbox" class="slider-label"></label>
 				</div>
 				<div class="metar float">
 					<pre id="flight-plan-metars"></pre>
@@ -105,67 +208,6 @@
 					<pre id="search-metar"></pre>
 				</div>
 			</section>
-
-			<br/>
-
-			<section>
-				<div id="map-flex-header">
-					<h1>Route Map</h1>
-					<button id="map-theme">Change Theme</button>
-				</div>
-				<div id="map"></div>
-			</section>
-
-			<br/>
-
-			<section>
-				<h1 id="transmitter-header">Transmitter Flight Tracking</h1>
-				<a id="transmitter-setup" href="https://www.virtualflight.online/operations/transmitter" target="_blank">(https://www.virtualflight.online/operations/transmitter)</a>
-
-				<div id="transmitter-settings" class="float">
-					<h1>Server</h1>
-					<span id="transmitter-server-url-label">URL:</span><input id="transmitter-server" placeholder="Transmitter Server" value="https://transmitter.virtualflight.online"/>
-					<span id="transmitter-endpoint">/status_json.php</span>
-					<br/>
-					<button id="save-transmitter-server">Save</button>
-					<button id="reset-transmitter-server">Reset</button>
-
-					<h1>Callsign</h1>
-					<input id="transmitter-callsign" placeholder="Callsign"/>
-					<button id="transmitter-start-tracking">Start Tracking</button>
-					<button id="transmitter-stop-tracking">Stop Tracking</button>
-				</div>
-
-				<div id="transmitter-data" class="float">
-					<div class="table-container">
-						<table id="transmitter-data-table">
-							<thead>
-								<tr>
-									<th>Time Online</th>
-									<th>Altitude</th>
-									<th>Heading</th>
-									<th>Airspeed</th>
-									<th>Groundspeed</th>
-									<th>Latitude</th>
-									<th>Longitude</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td>-</td>
-									<td>-</td>
-									<td>-</td>
-									<td>-</td>
-									<td>-</td>
-									<td>-</td>
-									<td>-</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</section>
-
 		</div>
 
 		<div id="scratchpad">
@@ -176,19 +218,19 @@
 					</div>
 					<div id="option-buttons">
 						<div id="new-scratchpad-button" class="option-button">
-							<img src="images/new-scratchpad.png" class="option-icon" alt="plus"/>
+							<img src="images/plus-sign.png" class="option-icon" alt="plus"/>
 							<h1>New</h1>
 						</div>
 						<div id="open-scratchpad-button" class="option-button">
-							<img src="images/open-file.png" class="option-icon" alt="folder"/>
+							<img src="images/folder.png" class="option-icon" alt="folder"/>
 							<h1>Open</h1>
 						</div>
 						<div id="save-scratchpad-button" class="option-button">
-							<img src="images/save-file.png" class="option-icon" alt="floppy disk"/>
+							<img src="images/floppy-disk.png" class="option-icon" alt="floppy disk"/>
 							<h1>Save</h1>
 						</div>
 						<div id="delete-scratchpad-button" class="option-button">
-							<img src="images/delete.png" class="option-icon" alt="trash can"/>
+							<img src="images/trash-can.png" class="option-icon" alt="trash can"/>
 							<h1>Delete</h1>
 						</div>
 					</div>
@@ -218,7 +260,7 @@
 				<h1>Templates</h1>
 				<div>
 					<div class="scratchpad-template" data-value="draw">
-						<img src="images/scratchpad.png" class="option-icon" alt="pencil"/>
+						<img src="images/pencil.png" class="option-icon" alt="pencil"/>
 						<h1>Draw</h1>
 					</div>
 					<div class="scratchpad-template" data-value="type">
@@ -230,7 +272,7 @@
 						<h1>ATIS</h1>
 					</div>
 					<div class="scratchpad-template" data-value="craft">
-						<img src="images/route.png" class="option-icon" alt="path from a to b"/>
+						<img src="images/route.png" class="option-icon" alt="path between markers"/>
 						<h1>CRAFT</h1>
 					</div>
 				</div>
@@ -246,7 +288,7 @@
 			<textarea id="type-template" spellcheck="false"></textarea>
 			<div id="craft-template">
 				<button id="craft-input-toggle" class="input-toggle" data-value="draw">
-					<img src="images/scratchpad.png" class="option-icon" alt="change input type"/>
+					<img src="images/pencil.png" class="option-icon" alt="change input type"/>
 				</button>
 
 				<div class="craft-letter">C</div>
@@ -262,7 +304,7 @@
 			</div>
 			<div id="atis-template">
 				<button id="atis-input-toggle" class="input-toggle" data-value="draw">
-					<img src="images/scratchpad.png" class="option-icon" alt="change input type"/>
+					<img src="images/pencil.png" class="option-icon" alt="change input type"/>
 				</button>
 
 				<div id="atis-row-1" class="atis-row">
@@ -355,20 +397,24 @@
 		</div>
 
 		<footer id="pages-menu">
+			<div id="map-button" class="page-button">
+				<img src="images/route.png" class="page-icon" alt="path between markers"/>
+				<h1>Route Map</h1>
+			</div>
 			<div id="briefing-button" class="page-button">
 				<img src="images/briefing.png" class="page-icon" alt="paper with folded corner"/>
 				<h1>Briefing</h1>
 			</div>
 			<div id="scratchpad-button" class="page-button">
-				<img src="images/scratchpad.png" class="page-icon" alt="pencil"/>
+				<img src="images/pencil.png" class="page-icon" alt="pencil"/>
 				<h1>ScratchPad</h1>
 			</div>
 		</footer>
 
-		<script src="transmitter.js"></script>
-		<script src="map.js"></script>
-		<script src="metar.js"></script>
-		<script src="scratchpad.js"></script>
-		<script src="main.js"></script>
+		<script src="js/map.js"></script>
+		<script src="js/transmitter.js"></script>
+		<script src="js/metar.js"></script>
+		<script src="js/scratchpad.js"></script>
+		<script src="js/main.js"></script>
 	</body>
 </html>

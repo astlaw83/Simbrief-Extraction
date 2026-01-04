@@ -1,4 +1,13 @@
+const mapPage = document.getElementById("map-page");
+const theme = document.getElementById("map-theme");
+const mapScaleCheckbox = document.getElementById("map-scale");
+const selectedLayer = document.getElementById("map-layer");
+
 let map;
+let mapScale;
+let currentTileLayer;
+let mapLayers = {};
+
 let scale = 15;
 const triangle = L.icon({
 	iconUrl: "images/marker-icon.png",
@@ -15,14 +24,17 @@ const planeIcon = L.icon({
 	popupAnchor: [256 / scale, 256 / scale],
 });
 
-let planeMarker = L.marker();
+let planeMarker;
+let trails;
 let centerAircraft = false;
 
 function initMap(waypoints, altRoutes) {
+	// stop transmitter
+	stopTracking();
+	clearTransmitter();
+
 	// remove the current map if there is one
-	if (map) {
-		map.remove();
-	}
+	if (map) map.remove();
 
 	// create the map
 	map = L.map("map", {
@@ -33,48 +45,95 @@ function initMap(waypoints, altRoutes) {
 		zoom: 13,
 	}).on("mousedown", () => centerAircraft = false);
 
-	// add a map layer
-	let dark = true;
-	let tileLayer = L.tileLayer.colorFilter("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+	// add trails layer
+	trails = L.layerGroup().addTo(map);
+
+	// add a scale
+	mapScale = new L.Control.ScaleNautical({
+		metric: false,
+		maxWidth: 200
+	})
+
+	// define and add map layers
+	const openStreetMap = L.tileLayer.colorFilter("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom: 19,
 		attribution: "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
-		filter: ["invert:100%", "grayscale:100%", "contrast:125%", "brightness:90%"]
+		filter: ["invert:100%", "grayscale:80%", "hue-rotate:180deg", "contrast:100%", "brightness:60%"]
 	}).addTo(map);
 
-	// enable map theme switching
-	document.getElementById("map-theme").addEventListener("click", () => {
-		document.querySelectorAll(".leaflet-marker-icon").forEach(e => e.classList.toggle("dark", !dark));
-		document.querySelectorAll(".leaflet-marker-icon").forEach(e => e.classList.toggle("light", dark));
-		if (dark) {
-			dark = false;
+	const osmBlack = L.tileLayer.colorFilter("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+		maxZoom: 19,
+		attribution: "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+		filter: ["invert:100%", "grayscale:100%", "contrast:100%", "brightness:90%"]
+	});
 
+	const worldImagery = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+		attribution: "&copy; <a href='https://esri.maps.arcgis.com/home'>Esri</a> — Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community",
+		maxNativeZoom: 19,
+		maxZoom: 22
+	});
+
+	currentTileLayer = openStreetMap;
+	mapLayers = {
+		osm: openStreetMap,
+		osmBlack: osmBlack,
+		sat: worldImagery
+	};
+
+	// enable map theme switching
+	theme.addEventListener("change", () => {
+		document.querySelectorAll(".leaflet-marker-icon").forEach(e => e.classList.toggle("dark", !theme.checked));
+		document.querySelectorAll(".leaflet-marker-icon").forEach(e => e.classList.toggle("light", theme.checked));
+
+		if (theme.checked) {
 			document.querySelectorAll(".leaflet-container").forEach(e => e.style.setProperty("background", "#ddd", "important"));
 			document.querySelectorAll(".leaflet-control-zoom-out, .leaflet-control-zoom-in, .leaflet-control-zoom-fullscreen.leaflet-fullscreen-icon").forEach(e => e.style.filter = "none");
 
-			tileLayer.updateFilter([
+			openStreetMap.updateFilter([
+				"invert:0%",
+				"grayscale:0%",
+				"hue-rotate:0",
+				"contrast:100%",
+				"brightness:100%"
+			]);
+
+			osmBlack.updateFilter([
 				"invert:0%",
 				"grayscale:0%",
 				"contrast:100%",
 				"brightness:100%"
 			]);
 		} else {
-			dark = true;
-
 			document.querySelectorAll(".leaflet-container").forEach(e => e.style.setProperty("background", "#000", "important"));
 			document.querySelectorAll(".leaflet-control-zoom-out, .leaflet-control-zoom-in, .leaflet-control-zoom-fullscreen.leaflet-fullscreen-icon").forEach(e => e.style.filter = "invert(100%) contrast(50%)");
 
-			tileLayer.updateFilter([
+			openStreetMap.updateFilter([
+				"invert:100%",
+				"grayscale:80%",
+				"hue-rotate:180deg",
+				"contrast:100%",
+				"brightness:60%"
+			]);
+
+			osmBlack.updateFilter([
 				"invert:100%",
 				"grayscale:100%",
-				"contrast:125%",
+				"contrast:100%",
 				"brightness:90%"
 			]);
 		}
 	});
 
+	// show whole map if called without waypoints
+	if (!waypoints) {
+		map.setView([0, 0], 1);
+		return;
+	}
+
 	// centre the map on the departure airport
 	map.setView([waypoints[0].lat, waypoints[0].long], 10);
 
+	// draw routes
 	drawRoute(waypoints, altRoutes, -360);
 	drawRoute(waypoints, altRoutes);
 	drawRoute(waypoints, altRoutes, 360);
@@ -190,6 +249,8 @@ function drawRoute(waypoints, altRoutes, offset = 0) {
 }
 
 function displayAircraft(aircraft) {
+	if (!map) return;
+
 	const latLong = [aircraft.latitude, aircraft.longitude];
 
 	// remove old marker
@@ -208,3 +269,62 @@ function displayAircraft(aircraft) {
 	// center map on aircraft
 	if (centerAircraft) map.setView(latLong);
 }
+
+function drawTrails(positions, colour) {
+	if (positions.length == 0) return;
+
+	for (let i = 0; i < positions.length - 1; i++) {
+		// draw line from position to next
+		L.polyline([
+			[positions[i].lat, positions[i].long],
+			[positions[i + 1].lat, positions[i + 1].long]
+		], {
+			color: colour
+		}).addTo(trails);
+	}
+}
+
+document.getElementById("open-map-settings").addEventListener("click", () => document.getElementById("map-settings").style.display = "block");
+document.getElementById("close-map-settings").addEventListener("click", () => document.getElementById("map-settings").style.display = "none");
+
+mapScaleCheckbox.addEventListener("change", () => {
+	if (mapScaleCheckbox.checked) {
+		mapScale.addTo(map);
+	} else {
+		map.removeControl(mapScale);
+	}
+});
+
+selectedLayer.addEventListener("change", () => {
+	// remove current layer
+	if (currentTileLayer) map.removeLayer(currentTileLayer);
+
+	// add new layer
+	switch (selectedLayer.value) {
+		case "osm":
+			const osm = mapLayers.osm;
+			currentTileLayer = osm;
+			osm.addTo(map);
+			break;
+
+		case "osm-b":
+			const osmBlack = mapLayers.osmBlack;
+			currentTileLayer = osmBlack;
+			osmBlack.addTo(map);
+			break;
+
+		case "sat":
+			const sat = mapLayers.sat;
+			currentTileLayer = sat;
+			sat.addTo(map);
+			break;
+	}
+});
+
+document.getElementById("map-button").addEventListener("click", () => {
+	if (!flightPlan && !requested && !map) initMap();
+}, {
+	once: true
+});
+
+document.getElementById("map-button").addEventListener("click", () => changeTab("map"));
