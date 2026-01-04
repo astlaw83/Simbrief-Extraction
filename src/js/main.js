@@ -25,10 +25,12 @@ async function fetchFlightPlan() {
 	let response;
 	try {
 		response = await fetch(url); // wait for the request to complete
+
 	} catch (err) {
 		console.error(err);
 		requested = false;
-		alert("Failed to fetch flight plan. Check your internet connection");
+		alert("Failed to fetch flight plan");
+		if (!map) initMap();
 		return;
 	}
 
@@ -36,9 +38,11 @@ async function fetchFlightPlan() {
 
 	if (!response.ok) {
 		console.log(response);
+		console.error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
+		if (!map) initMap();
 		requested = false;
 		alert(`Server error (SimBrief): ${response.status}\n${flightPlan.fetch.status}`);
-		throw new Error(`Server error: ${response.status}\n${flightPlan.fetch.status}`);
+		return;
 	} else {
 		loaded = true;
 	}
@@ -68,7 +72,6 @@ async function fetchFlightPlan() {
 		if (e.key == "=" && e.altKey) incrementOfpFontSize(1, "increase");
 		if (e.key == "-" && e.altKey) incrementOfpFontSize(-1, "decrease");
 	});
-
 
 	// allow more requests
 	requested = false;
@@ -103,7 +106,7 @@ function populateFlightData() {
 	ofp.children[0].style.lineHeight = 1.1;
 
 	// fill in the metar
-	// initMetars();
+	initMetars();
 }
 
 function decodeWaypoints() {
