@@ -40,3 +40,23 @@ v1.7.0 - ScratchPad:
 
        - BUG FIXES:
          - Routes crossing the meridian are not displayed correctly
+
+v1.8.0 - Dedicated map page:
+         - No need to have a flight plan to access the map
+         - Colour dark theme and satellite map layers
+         - All map related settings in one place
+         - Coloured aircraft trails inspired by (aka copied off) FlightRadar24
+         - Status indicator for Transmitter
+         - Optional map scale
+         - Overall more customisable
+
+       - Server error handling for Transmitter
+       - Made leaflet local not remote to stop map breaking
+
+       - Better semantics
+
+       - BUG FIXES:
+         - Images do not change size when changing ofp text size
+         - Failed fetch prevents more requests
+         - Flight plan with multiple alternates causes error? (idk, but I fixed it anyway)
+         - Error message on reload when transmitter is running
